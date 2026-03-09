@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken')
 // Helper — creates a JWT token for a merchant
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '1h'
+        expiresIn: '30d'
+
     })
 }
 
