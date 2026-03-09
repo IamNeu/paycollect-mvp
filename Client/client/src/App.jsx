@@ -4,6 +4,8 @@ import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Requests from './pages/Requests.jsx'
 import NewRequest from './pages/NewRequest.jsx'
+import RequestDetail from './pages/RequestDetail.jsx'
+
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/requests" element={<Requests />} />
                 <Route path="/requests/new" element={<NewRequest />} />
+                <Route path="/requests/:id" element={<RequestDetail />} />
+
 
       </Routes>
 

@@ -72,6 +72,24 @@ const createRequest = async(req, res) => {
 
 // GET single request by ID
 const getRequestById = async(req, res) => {
+        try {
+            const request = await PaymentRequest.findOne({
+                _id: req.params.id,
+                merchant_id: req.merchant._id
+            })
+
+            if (!request) {
+                return res.status(404).json({ message: 'Request not found' })
+            }
+
+            res.json({ request })
+        } catch (error) {
+            console.error('Get request error:', error)
+            res.status(500).json({ message: 'Server error' })
+        }
+    }
+    // PATCH cancel a request
+const cancelRequest = async(req, res) => {
     try {
         const request = await PaymentRequest.findOne({
             _id: req.params.id,
@@ -82,11 +100,18 @@ const getRequestById = async(req, res) => {
             return res.status(404).json({ message: 'Request not found' })
         }
 
-        res.json({ request })
+        if (request.status === 'paid') {
+            return res.status(400).json({ message: 'Cannot cancel a paid request' })
+        }
+
+        request.status = 'cancelled'
+        request.cancelled_at = new Date()
+        await request.save()
+
+        res.json({ message: 'Request cancelled', request })
     } catch (error) {
-        console.error('Get request error:', error)
+        console.error('Cancel request error:', error)
         res.status(500).json({ message: 'Server error' })
     }
 }
-
-module.exports = { getRequests, createRequest, getRequestById }
+module.exports = { getRequests, createRequest, getRequestById, cancelRequest }
