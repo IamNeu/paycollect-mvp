@@ -4,55 +4,61 @@ import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
 
-// Status pill component
 function StatusPill({ status }) {
-  const styles = {
-    pending:   { bg: '#fffbeb', color: '#d97706', label: 'PENDING' },
-    partial:   { bg: '#eff6ff', color: '#3b82f6', label: 'PARTIAL' },
-    paid:      { bg: '#f0fdf4', color: '#059669', label: 'PAID' },
-    expired:   { bg: '#fff0f3', color: '#e94560', label: 'EXPIRED' },
-    cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'CANCELLED' },
+  const map = {
+    pending:   { bg: '#fff3cd', color: '#856404', label: 'Pending' },
+    partial:   { bg: '#cfe2ff', color: '#084298', label: 'Partial' },
+    paid:      { bg: '#d1e7dd', color: '#0a3622', label: 'Paid' },
+    expired:   { bg: '#f8d7da', color: '#842029', label: 'Expired' },
+    cancelled: { bg: '#e2e3e5', color: '#41464b', label: 'Cancelled' },
   }
-  const s = styles[status] || styles.pending
+  const s = map[status] || map.pending
   return (
-    <span style={{
-      backgroundColor: s.bg,
-      color: s.color,
-      padding: '3px 10px',
-      borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: '700',
-      letterSpacing: '0.4px'
-    }}>
+    <span style={{ background: s.bg, color: s.color, padding: '2px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700' }}>
       {s.label}
     </span>
   )
 }
 
+const TABS = ['All Requests', 'Pending', 'Partial', 'Paid', 'Failed']
+
 export default function Requests() {
   const navigate = useNavigate()
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
+  const [activeTab, setActiveTab] = useState('All Requests')
   const [search, setSearch] = useState('')
+  const [counts, setCounts] = useState({ total: 0, pending: 0, partial: 0, paid: 0, failed: 0, outstanding: 0 })
+
+  const tabToStatus = { 'All Requests': '', 'Pending': 'pending', 'Partial': 'partial', 'Paid': 'paid', 'Failed': 'expired' }
 
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (!token) { navigate('/login'); return }
-    fetchRequests(token)
-  }, [filter])
+    fetchRequests()
+  }, [activeTab])
 
-  const fetchRequests = async (token) => {
+  const fetchRequests = async () => {
     try {
       const params = {}
-      if (filter !== 'all') params.status = filter
+      const status = tabToStatus[activeTab]
+      if (status) params.status = status
       if (search) params.search = search
 
       const res = await axios.get('http://localhost:5000/api/requests', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         params
       })
-      setRequests(res.data.requests || [])
+      const reqs = res.data.requests || []
+      setRequests(reqs)
+      setCounts({
+        total: reqs.length,
+        pending: reqs.filter(r => r.status === 'pending').length,
+        partial: reqs.filter(r => r.status === 'partial').length,
+        paid: reqs.filter(r => r.status === 'paid').length,
+        failed: reqs.filter(r => r.status === 'expired' || r.status === 'cancelled').length,
+        outstanding: reqs.filter(r => r.status !== 'paid').reduce((s, r) => s + (r.amount_due - (r.amount_paid || 0)), 0)
+      })
     } catch (err) {
       if (err.response?.status === 401) navigate('/login')
       toast.error('Failed to load requests')
@@ -61,220 +67,156 @@ export default function Requests() {
     }
   }
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    fetchRequests(localStorage.getItem('token'))
-  }
-
-  const filterButtons = [
-    { label: 'All', value: 'all' },
-    { label: 'Pending', value: 'pending' },
-    { label: 'Partial', value: 'partial' },
-    { label: 'Paid', value: 'paid' },
-    { label: 'Expired', value: 'expired' },
-  ]
+  const today = new Date()
+  const fromDate = new Date(today); fromDate.setDate(today.getDate() - 30)
+  const fmt = d => d.toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' })
 
   return (
     <Layout>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f3460', marginBottom: '4px' }}>
-            Collect Payments
-          </h1>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>
-            Manage and track all your payment requests
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/requests/new')}
-          style={{
-            backgroundColor: '#0f3460',
-            color: 'white',
-            border: 'none',
-            borderRadius: '10px',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: '700',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          + New Request
-        </button>
-      </div>
-
-      {/* Search + Filter Bar */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        padding: '16px 20px',
-        border: '1px solid #dde3f0',
-        marginBottom: '16px',
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center',
-        flexWrap: 'wrap'
-      }}>
-        {/* Search */}
-        <form onSubmit={handleSearch} style={{ display: 'flex', gap: '8px', flex: 1, minWidth: '200px' }}>
-          <input
-            type="text"
-            placeholder="Search by customer name, phone, reference..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              flex: 1,
-              padding: '9px 14px',
-              borderRadius: '8px',
-              border: '1px solid #dde3f0',
-              fontSize: '13px',
-              outline: 'none'
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: '9px 16px',
-              backgroundColor: '#0f3460',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '13px',
-              cursor: 'pointer'
-            }}
-          >
-            Search
-          </button>
-        </form>
-
-        {/* Filter buttons */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {filterButtons.map((btn) => (
-            <button
-              key={btn.value}
-              onClick={() => setFilter(btn.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '8px',
-                border: '1px solid',
-                borderColor: filter === btn.value ? '#0f3460' : '#dde3f0',
-                backgroundColor: filter === btn.value ? '#0f3460' : 'white',
-                color: filter === btn.value ? 'white' : '#6b7280',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              {btn.label}
+      <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
+        {/* Page header */}
+        <div style={{ padding: '18px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: '700', color: '#1a1a2e' }}>Collect Payments</div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 15px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>
+              ⬆ Upload Excel
             </button>
+            <button onClick={() => navigate('/requests/new')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 15px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#e94560', color: '#fff', border: 'none' }}>
+              + New Request
+            </button>
+          </div>
+        </div>
+
+        {/* Time period bar */}
+        <div style={{ padding: '14px 24px 0', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Time Period:</span>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            {['Today', '7 Days', '30 Days', '90 Days', '6 Months', '1 Year'].map(p => (
+              <div key={p} style={{ padding: '5px 13px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '700', background: p === '30 Days' ? '#0f3460' : '#f5f7fb', color: p === '30 Days' ? '#fff' : '#555', border: `1.5px solid ${p === '30 Days' ? '#0f3460' : '#dde1ea'}`, cursor: 'pointer' }}>
+                {p}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Active period */}
+        <div style={{ padding: '8px 24px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{ fontSize: '0.75rem', color: '#0f3460', fontWeight: '700' }}>📅 Showing data for:</span>
+          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#e94560', background: '#fff0f3', padding: '2px 10px', borderRadius: '20px', border: '1px solid #f5b8c4' }}>
+            {fmt(fromDate)} — {fmt(today)} (30 days)
+          </span>
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display: 'flex', gap: '16px', padding: '14px 24px', flexWrap: 'wrap' }}>
+          {[
+            { val: counts.total, lbl: 'Total Requests', color: '#0f3460' },
+            { val: counts.pending, lbl: 'Pending', color: '#856404' },
+            { val: counts.partial, lbl: 'Partial Payments', color: '#084298' },
+            { val: counts.paid, lbl: 'Fully Paid', color: '#0a3622' },
+            { val: counts.failed, lbl: 'Failed / Expired', color: '#842029' },
+            { val: `₱${Number(counts.outstanding).toLocaleString()}`, lbl: 'Total Outstanding', color: '#0f3460' },
+          ].map(s => (
+            <div key={s.lbl} style={{ flex: 1, minWidth: '130px', background: '#f5f7fb', borderRadius: '10px', padding: '14px 16px' }}>
+              <div style={{ fontSize: '1.4rem', fontWeight: '800', color: s.color }}>{s.val}</div>
+              <div style={{ fontSize: '0.72rem', color: '#888', marginTop: '2px' }}>{s.lbl}</div>
+            </div>
           ))}
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '0', padding: '0 24px', borderBottom: '1.5px solid #e9ecef' }}>
+          {TABS.map(tab => (
+            <div key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '8px 18px', fontSize: '0.83rem', fontWeight: '600', color: activeTab === tab ? '#0f3460' : '#666', cursor: 'pointer', borderBottom: activeTab === tab ? '2px solid #e94560' : '2px solid transparent', marginBottom: '-1.5px' }}>
+              {tab}
+            </div>
+          ))}
+        </div>
+
+        {/* Filter bar */}
+        <div style={{ display: 'flex', gap: '10px', padding: '14px 24px', alignItems: 'center' }}>
+          <div style={{ flex: 1, background: '#f5f7fb', border: '1px solid #dde1ea', borderRadius: '8px', padding: '8px 14px', fontSize: '0.83rem', color: '#888', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              type="text"
+              placeholder="🔍  Search by customer name, phone, reference…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && fetchRequests()}
+              style={{ border: 'none', outline: 'none', background: 'transparent', width: '100%', fontSize: '0.83rem' }}
+            />
+          </div>
+          <div style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '600', border: '1px solid #dde1ea', background: '#fff', color: '#555', cursor: 'pointer' }}>Amount ▾</div>
+          <div style={{ padding: '6px 14px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '600', border: '1px solid #0f3460', background: '#0f3460', color: '#fff', cursor: 'pointer' }}>Status ▾</div>
+          <button style={{ padding: '6px 12px', borderRadius: '7px', fontSize: '0.78rem', fontWeight: '600', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0', cursor: 'pointer' }}>Export CSV</button>
         </div>
       </div>
 
       {/* Table */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '12px',
-        border: '1px solid #dde3f0',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        overflow: 'hidden'
-      }}>
-        {/* Table header */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr 1fr 1fr 1fr',
-          padding: '12px 20px',
-          backgroundColor: '#0f3460',
-          color: 'white',
-          fontSize: '12px',
-          fontWeight: '600',
-          letterSpacing: '0.3px'
-        }}>
-          <div>REFERENCE</div>
-          <div>CUSTOMER</div>
-          <div>AMOUNT DUE</div>
-          <div>AMOUNT PAID</div>
-          <div>TYPE</div>
-          <div>STATUS</div>
-          <div>DUE DATE</div>
-        </div>
+      <div style={{ padding: '0 24px 24px', overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+          <thead>
+            <tr style={{ background: '#f8faff' }}>
+              <th style={{ padding: '10px 14px', textAlign: 'left', borderBottom: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: '700', color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.6px' }}><input type="checkbox" /></th>
+              {['Reference ID', 'Customer', 'Amount Due', 'Amount Paid', 'Payment Type', 'Status', 'Sent On', 'Due Date', 'Actions'].map(h => (
+                <th key={h} style={{ padding: '10px 14px', textAlign: 'left', borderBottom: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: '700', color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr><td colSpan="10" style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>Loading...</td></tr>
+            ) : requests.length === 0 ? (
+              <tr>
+                <td colSpan="10" style={{ padding: '64px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div>
+                  <div style={{ fontWeight: '700', color: '#0f3460', marginBottom: '6px' }}>No requests yet</div>
+                  <button onClick={() => navigate('/requests/new')} style={{ marginTop: '8px', padding: '8px 20px', background: '#e94560', color: '#fff', border: 'none', borderRadius: '7px', cursor: 'pointer', fontWeight: '600' }}>+ Create First Request</button>
+                </td>
+              </tr>
+            ) : requests.map((req, i) => (
+              <tr key={req._id} style={{ background: i % 2 === 0 ? '#fff' : '#f8faff' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f0f4ff'}
+                onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#f8faff'}
+              >
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}><input type="checkbox" /></td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', fontWeight: '600', color: '#0f3460', cursor: 'pointer' }} onClick={() => navigate(`/requests/${req._id}`)}>
+                  {req.reference_id || `REQ-${req._id.slice(-8).toUpperCase()}`}
+                </td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>
+                  <div style={{ fontWeight: '600' }}>{req.customer_name}</div>
+                  <div style={{ fontSize: '0.72rem', color: '#888' }}>{req.customer_mobile}</div>
+                </td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>₱{Number(req.amount_due).toLocaleString()}</td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>₱{Number(req.amount_paid || 0).toLocaleString()}</td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', color: '#666', textTransform: 'capitalize' }}>
+                  {req.payment_type?.replace('_', ' ') || '—'}
+                </td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}><StatusPill status={req.status} /></td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', color: '#666' }}>
+                  {req.sent_at ? new Date(req.sent_at).toLocaleDateString('en-PH') : '—'}
+                </td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', color: '#666' }}>
+                  {req.due_date ? new Date(req.due_date).toLocaleDateString('en-PH') : '—'}
+                </td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>
+                  <span onClick={() => navigate(`/requests/${req._id}`)} style={{ fontSize: '0.78rem', color: '#0f3460', cursor: 'pointer', marginRight: '8px', fontWeight: '600' }}>View</span>
+                  {req.status !== 'paid' && <span style={{ fontSize: '0.78rem', color: '#e94560', cursor: 'pointer', fontWeight: '600' }}>Remind</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-        {/* Table rows */}
-        {loading ? (
-          <div style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>
-            Loading requests...
+        {requests.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
+            <span style={{ fontSize: '0.78rem', color: '#888' }}>Showing 1–{requests.length} of {requests.length} requests</span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button style={{ padding: '5px 12px', fontSize: '0.78rem', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0', borderRadius: '7px', cursor: 'pointer' }}>← Prev</button>
+              <button style={{ padding: '5px 12px', fontSize: '0.78rem', background: '#e94560', color: '#fff', border: 'none', borderRadius: '7px', cursor: 'pointer' }}>Next →</button>
+            </div>
           </div>
-        ) : requests.length === 0 ? (
-          <div style={{ padding: '64px', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📋</div>
-            <div style={{ fontSize: '16px', fontWeight: '700', color: '#0f3460', marginBottom: '8px' }}>
-              No payment requests yet
-            </div>
-            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>
-              Create your first request to start collecting payments
-            </div>
-            <button
-              onClick={() => navigate('/requests/new')}
-              style={{
-                backgroundColor: '#0f3460',
-                color: 'white',
-                border: 'none',
-                borderRadius: '10px',
-                padding: '12px 24px',
-                fontSize: '14px',
-                fontWeight: '700',
-                cursor: 'pointer'
-              }}
-            >
-              + Create First Request
-            </button>
-          </div>
-        ) : (
-          requests.map((req, i) => (
-            <div
-              key={req._id}
-              onClick={() => navigate(`/requests/${req._id}`)}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.5fr 1.5fr 1fr 1fr 1fr 1fr 1fr',
-                padding: '14px 20px',
-                borderBottom: '1px solid #f3f4f6',
-                fontSize: '13px',
-                color: '#374151',
-                cursor: 'pointer',
-                backgroundColor: i % 2 === 0 ? 'white' : '#fafbff',
-                transition: 'background 0.15s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eef4ff'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = i % 2 === 0 ? 'white' : '#fafbff'}
-            >
-              <div style={{ fontWeight: '600', color: '#0f3460', fontFamily: 'monospace', fontSize: '12px' }}>
-                {req.reference_id || req._id.slice(-8).toUpperCase()}
-              </div>
-              <div>
-                <div style={{ fontWeight: '600' }}>{req.customer_name}</div>
-                <div style={{ color: '#9ca3af', fontSize: '11px' }}>{req.customer_mobile}</div>
-              </div>
-              <div style={{ fontWeight: '700' }}>₱{Number(req.amount_due).toLocaleString()}</div>
-              <div style={{ color: '#059669', fontWeight: '600' }}>
-                ₱{Number(req.amount_paid || 0).toLocaleString()}
-              </div>
-              <div style={{ color: '#6b7280', textTransform: 'capitalize' }}>
-                {req.payment_type?.replace('_', ' ') || 'One time'}
-              </div>
-              <div><StatusPill status={req.status} /></div>
-              <div style={{ color: '#6b7280' }}>
-                {req.due_date ? new Date(req.due_date).toLocaleDateString('en-PH') : '—'}
-              </div>
-            </div>
-          ))
         )}
       </div>
-
     </Layout>
   )
 }

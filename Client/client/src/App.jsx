@@ -5,7 +5,9 @@ import Dashboard from './pages/Dashboard.jsx'
 import Requests from './pages/Requests.jsx'
 import NewRequest from './pages/NewRequest.jsx'
 import RequestDetail from './pages/RequestDetail.jsx'
-
+import Customers from './pages/Customers.jsx'
+import CustomerProfile from './pages/CustomerProfile.jsx'
+import Settings from './pages/Settings.jsx'
 
 function App() {
   return (
@@ -16,12 +18,12 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/requests" element={<Requests />} />
-                <Route path="/requests/new" element={<NewRequest />} />
-                <Route path="/requests/:id" element={<RequestDetail />} />
-
-
+        <Route path="/requests/new" element={<NewRequest />} />
+        <Route path="/requests/:id" element={<RequestDetail />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:id" element={<CustomerProfile />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
-
     </Router>
   )
 }
