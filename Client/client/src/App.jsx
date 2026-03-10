@@ -8,6 +8,8 @@ import RequestDetail from './pages/RequestDetail.jsx'
 import Customers from './pages/Customers.jsx'
 import CustomerProfile from './pages/CustomerProfile.jsx'
 import Settings from './pages/Settings.jsx'
+import Reports from './pages/Reports.jsx'
+
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/customers/:id" element={<CustomerProfile />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/reports" element={<Reports />} />
+
       </Routes>
     </Router>
   )
