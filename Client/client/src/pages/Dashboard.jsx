@@ -15,7 +15,7 @@ export default function Dashboard() {
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (!token) { navigate('/login'); return }
-    axios.get('http://localhost:5000/api/dashboard/stats', {
+    axios.get('https://paycollect-api.onrender.com/api/dashboard/stats', {
       headers: { Authorization: `Bearer ${token}` }
     }).then(res => setStats(res.data)).catch(err => {
       if (err.response?.status === 401) navigate('/login')

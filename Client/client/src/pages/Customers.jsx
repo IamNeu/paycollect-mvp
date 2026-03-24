@@ -18,7 +18,7 @@ export default function Customers() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/customers', {
+      const res = await axios.get('https://paycollect-api.onrender.com/api/customers', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         params: search ? { search } : {}
       })

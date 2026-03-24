@@ -44,7 +44,7 @@ export default function RequestDetail() {
   const fetchRequest = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/requests/${id}`,
+        `https://paycollect-api.onrender.com/api/requests/${id}`,
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       )
       setRequest(res.data.request)
@@ -61,7 +61,7 @@ export default function RequestDetail() {
     setCancelling(true)
     try {
       await axios.patch(
-        `http://localhost:5000/api/requests/${id}/cancel`,
+        `https://paycollect-api.onrender.com/api/requests/${id}/cancel`,
         {},
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       )

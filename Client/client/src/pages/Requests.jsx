@@ -45,7 +45,7 @@ export default function Requests() {
       if (status) params.status = status
       if (search) params.search = search
 
-      const res = await axios.get('http://localhost:5000/api/requests', {
+      const res = await axios.get('https://paycollect-api.onrender.com/api/requests', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         params
       })
