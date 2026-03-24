@@ -6,9 +6,11 @@ const cors = require('cors');
 const app = express();
 
 // Middleware: CORS Configuration (Only once)
+
 app.use(cors({
-    origin: true,
-    credentials: true
+    origin: '*', // This allows all devices/phones to connect
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
