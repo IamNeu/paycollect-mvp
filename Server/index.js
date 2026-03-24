@@ -7,7 +7,7 @@ const app = express();
 
 // Middleware: CORS Configuration (Only once)
 app.use(cors({
-    origin: "*",
+    origin: true,
     credentials: true
 }));
 
