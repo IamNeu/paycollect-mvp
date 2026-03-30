@@ -23,6 +23,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/pay', require('./routes/pay'));
+app.use('/api/customers', require('./routes/customers'))
 
 // Test route
 app.get('/', (req, res) => {
