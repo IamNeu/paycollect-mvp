@@ -27,14 +27,15 @@ app.get('/', (req, res) => {
 });
 
 // Port Handling for Render
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 10000;
 
-// Connect to MongoDB then start server
+// Connect to MongoDB then start server (The ONLY listen block you need)
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('✅ Connected to MongoDB!');
-        app.listen(PORT, () => {
-            console.log('✅ Server running on port ' + PORT);
+        // This is the only place we should start the server
+        app.listen(PORT, "0.0.0.0", () => {
+            console.log(`✅ Server running on port ${PORT}`);
         });
     })
     .catch((error) => {

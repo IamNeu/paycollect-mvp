@@ -59,7 +59,7 @@ const createRequest = async(req, res) => {
             allow_partial: allow_partial !== false,
             description,
             reference_id,
-            payment_link: `http://localhost:5173/pay/${token}`,
+            payment_link: token,
             sent_at: new Date()
         })
 

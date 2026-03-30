@@ -2,11 +2,12 @@ const express = require('express')
 const router = express.Router()
 const PaymentRequest = require('../models/PaymentRequest')
 
-// GET /api/pay/:token — load payment page data
+// GET /api/pay/:token
 router.get('/:token', async(req, res) => {
     try {
+        const token = req.params.token
         const request = await PaymentRequest.findOne({
-            payment_link: { $regex: req.params.token }
+            payment_link: { $regex: token, $options: 'i' }
         })
         if (!request) return res.status(404).json({ message: 'Payment link not found' })
         if (request.status === 'paid') return res.status(400).json({ message: 'This request has already been paid' })
@@ -17,12 +18,13 @@ router.get('/:token', async(req, res) => {
     }
 })
 
-// POST /api/pay/:token — submit payment
+// POST /api/pay/:token
 router.post('/:token', async(req, res) => {
     try {
+        const token = req.params.token
         const { amount, payment_mode } = req.body
         const request = await PaymentRequest.findOne({
-            payment_link: { $regex: req.params.token }
+            payment_link: { $regex: token, $options: 'i' }
         })
         if (!request) return res.status(404).json({ message: 'Payment link not found' })
         if (request.status === 'paid') return res.status(400).json({ message: 'Already paid' })
