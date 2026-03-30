@@ -8,8 +8,11 @@ const app = express();
 // Middleware: CORS Configuration (Only once)
 
 app.use(cors({
-    origin: '*', // This allows all devices/phones to connect
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    origin: [
+        'https://paycollect-mvp.vercel.app'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
