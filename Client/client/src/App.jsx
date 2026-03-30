@@ -9,7 +9,7 @@ import Customers from './pages/Customers.jsx'
 import CustomerProfile from './pages/CustomerProfile.jsx'
 import Settings from './pages/Settings.jsx'
 import Reports from './pages/Reports.jsx'
-
+import PaymentPage from './pages/PaymentPage.jsx'
 
 function App() {
   return (
@@ -26,7 +26,7 @@ function App() {
         <Route path="/customers/:id" element={<CustomerProfile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/reports" element={<Reports />} />
-
+        <Route path="/pay/:token" element={<PaymentPage />} />
       </Routes>
     </Router>
   )
