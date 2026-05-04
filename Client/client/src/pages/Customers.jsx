@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
+import API from '../config'
 
 export default function Customers() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ export default function Customers() {
 
   const fetchCustomers = async () => {
     try {
-      const res = await axios.get('https://paycollect-api.onrender.com/api/customers', {
+      const res = await axios.get(`${API}/api/customers`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         params: search ? { search } : {}
       })

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
+import API from '../config'
 
 const TABS = [
   { id: 'existing', label: '🔍 Existing Customer' },
@@ -142,7 +143,7 @@ function NewCustomerTab({ navigate }) {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      await axios.post('https://paycollect-api.onrender.com/api/requests', form, {
+      await axios.get(`${API}/api/requests`, form, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
       toast.success('Customer created and request sent! 🎉')

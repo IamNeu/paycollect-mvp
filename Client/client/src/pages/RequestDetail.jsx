@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
+import API from '../config' 
 
 function StatusPill({ status }) {
   const styles = {
@@ -61,7 +62,7 @@ export default function RequestDetail() {
     setCancelling(true)
     try {
       await axios.patch(
-        `https://paycollect-api.onrender.com/api/requests/${id}/cancel`,
+        `${API}`,
         {},
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       )

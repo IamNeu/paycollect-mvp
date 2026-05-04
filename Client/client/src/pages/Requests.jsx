@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
+import API from '../config'
 
 function StatusPill({ status }) {
   const map = {
@@ -45,7 +46,7 @@ export default function Requests() {
       if (status) params.status = status
       if (search) params.search = search
 
-      const res = await axios.get('https://paycollect-api.onrender.com/api/requests', {
+      const res = await axios.get(`${API}/api/requests`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
         params
       })

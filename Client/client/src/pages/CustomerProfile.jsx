@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
+import API from '../config'
 
-const API = 'http://localhost:10000'
+//const API = 'http://localhost:10000'
 
 function StatusPill({ status }) {
   const map = {
