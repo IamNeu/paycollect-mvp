@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login.jsx'
+import LandingPage from './pages/LandingPage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Requests from './pages/Requests.jsx'
 import NewRequest from './pages/NewRequest.jsx'
@@ -19,7 +20,7 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         {/* Public */}
-        <Route path="/" element={<Login />} />
+        <Route path="/" element={<LandingPage />} />       
         <Route path="/login" element={<Login />} />
         <Route path="/pay/:token" element={<PaymentPage />} />
 
