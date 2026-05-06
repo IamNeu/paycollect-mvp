@@ -45,7 +45,8 @@ export default function RequestDetail() {
   const fetchRequest = async () => {
     try {
       const res = await axios.get(
-        `https://paycollect-api.onrender.com/api/requests/${id}`,
+        `${API}/api/requests/${id}`,
+
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       )
       setRequest(res.data.request)

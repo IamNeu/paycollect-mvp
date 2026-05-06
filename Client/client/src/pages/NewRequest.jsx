@@ -20,8 +20,9 @@ function ExistingCustomerTab({ navigate }) {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      await axios.post('https://paycollect-api.onrender.com/api/requests',
-        { ...form, customer_name: 'Maria Santos', customer_mobile: '+63 917 1234' },
+await axios.post(`${API}/api/requests`,        
+  { ...form, customer_name: 'Maria Santos', customer_mobile: '+63 917 1234' },
+
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       )
       toast.success('Payment request sent! 🎉')

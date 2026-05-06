@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
 
-const API = 'https://paycollect-api.onrender.com'
-
+import API from '../config'
 const METHODS = [
   { id: 'gcash',    icon: '💚', label: 'GCash',      color: '#00b14f' },
   { id: 'maya',     icon: '🔵', label: 'Maya',       color: '#0087da' },
