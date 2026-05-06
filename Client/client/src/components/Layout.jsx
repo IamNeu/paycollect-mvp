@@ -13,6 +13,7 @@ function Navbar() {
     { label: '💳 Collect Payments', path: '/requests' },
     { label: '👥 Customers', path: '/customers' },
     { label: '📊 Reports', path: '/reports' },
+    { label: '⚙️ Settings', path: '/settings' },
   ]
 
   const handleLogout = () => {
