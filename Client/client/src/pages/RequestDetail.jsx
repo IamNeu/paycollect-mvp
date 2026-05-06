@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import Layout from '../components/Layout'
-import API from '../config' 
+import API from '../apiConfig' 
 
 function StatusPill({ status }) {
   const styles = {
