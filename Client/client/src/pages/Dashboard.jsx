@@ -252,8 +252,7 @@ axios.get(`${API}/api/dashboard/stats`, {
                 <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '9px', padding: '8px 10px', background: '#fff9f9', border: '1px solid #fecaca', borderRadius: '8px', marginBottom: '6px' }}>
                   <div style={{ width: '30px', height: '30px', background: '#fee2e2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: '700', color: '#991b1b', flexShrink: 0 }}>{c.initials}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.76rem', fontWeight: '700', color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
-                    <div style={{ fontSize: '0.62rem', color: '#aaa' }}>{c.due}</div>
+<div onClick={() => navigate('/customers')} style={{ fontSize: '0.76rem', fontWeight: '700', color: '#1a1a2e', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'pointer' }}>{c.name}</div>                    <div style={{ fontSize: '0.62rem', color: '#aaa' }}>{c.due}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontSize: '0.76rem', fontWeight: '700', color: '#e94560' }}>{c.amount}</div>
@@ -261,8 +260,7 @@ axios.get(`${API}/api/dashboard/stats`, {
                   </div>
                 </div>
               ))}
-              <a href="#" style={{ display: 'block', textAlign: 'center', fontSize: '0.7rem', color: '#e94560', fontWeight: '600', paddingTop: '4px' }}>View all 38 →</a>
-            </div>
+<span onClick={() => navigate('/customers')} style={{ display: 'block', textAlign: 'center', fontSize: '0.7rem', color: '#e94560', fontWeight: '600', paddingTop: '4px', cursor: 'pointer' }}>View all 38 →</span>            </div>
 
           </div>
         </div>
