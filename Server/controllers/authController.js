@@ -86,4 +86,28 @@ const register = async(req, res) => {
     }
 }
 
-module.exports = { login, register }
+
+// ── GET PROFILE ──
+const getProfile = async(req, res) => {
+    try {
+        const merchant = await Merchant.findById(req.merchant.id).select('-password_hash')
+        res.json({ merchant })
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' })
+    }
+}
+
+// ── UPDATE PROFILE ──
+const updateProfile = async(req, res) => {
+    try {
+        const { company_name, email, phone, address, website, industry, notification_preferences } = req.body
+        const merchant = await Merchant.findByIdAndUpdate(
+            req.merchant.id, { company_name, email, phone, address, website, industry, notification_preferences }, { new: true }
+        ).select('-password_hash')
+        res.json({ merchant })
+    } catch (error) {
+        res.status(500).json({ message: 'Server error' })
+    }
+}
+
+module.exports = { login, register, getProfile, updateProfile }

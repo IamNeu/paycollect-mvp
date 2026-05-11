@@ -36,7 +36,25 @@ const merchantSchema = new mongoose.Schema({
         type: String,
         enum: ['active', 'suspended', 'trial'],
         default: 'trial'
-    }
+    },
+    phone: { type: String },
+    address: { type: String },
+    website: { type: String },
+    industry: { type: String },
+    notification_preferences: {
+        sms: { type: Boolean, default: true },
+        email: { type: Boolean, default: true },
+        whatsapp: { type: Boolean, default: false },
+        payment_received: { type: Boolean, default: true },
+        overdue_reminders: { type: Boolean, default: true },
+        daily_summary: { type: Boolean, default: false }
+    },
+    gateway_configs: [{
+        gateway: { type: String },
+        api_key: { type: String },
+        secret_key: { type: String },
+        connected: { type: Boolean, default: false }
+    }]
 }, { timestamps: true })
 
 // Automatically hash password before saving
