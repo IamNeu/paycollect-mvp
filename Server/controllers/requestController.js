@@ -11,6 +11,13 @@ const getRequests = async(req, res) => {
         }
 
         // Search by customer name or mobile
+        // Filter by date range
+        if (req.query.from && req.query.to) {
+            filter.createdAt = {
+                $gte: new Date(req.query.from),
+                $lte: new Date(req.query.to)
+            }
+        }
         if (req.query.search) {
             filter.$or = [
                 { customer_name: { $regex: req.query.search, $options: 'i' } },
