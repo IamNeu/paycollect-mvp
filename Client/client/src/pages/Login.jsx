@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
+import API from '../apiConfig'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -18,7 +19,7 @@ export default function Login() {
     setLoading(true)
     try {
 // Temporarily bypass .env to get the client logged in
-const res = await axios.post("http://localhost:10000/api/auth/login", formData)
+const res = await axios.post(`${API}/api/auth/login`, formData)
 localStorage.setItem('token', res.data.token)
 
 
