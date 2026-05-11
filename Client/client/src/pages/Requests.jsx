@@ -215,8 +215,23 @@ const getDateRange = (period) => {
                 </td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>
                   <span onClick={() => navigate(`/requests/${req._id}`)} style={{ fontSize: '0.78rem', color: '#0f3460', cursor: 'pointer', marginRight: '8px', fontWeight: '600' }}>View</span>
-                  {req.status !== 'paid' && <span style={{ fontSize: '0.78rem', color: '#e94560', cursor: 'pointer', fontWeight: '600' }}>Remind</span>}
-                </td>
+{req.status !== 'paid' && (
+  <span
+    onClick={async () => {
+      try {
+        await axios.post(`${API}/api/requests/${req._id}/remind`, {}, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        })
+        toast.success(`Reminder sent to ${req.customer_name}! 📱`)
+      } catch (err) {
+        toast.error('Failed to send reminder')
+      }
+    }}
+    style={{ fontSize: '0.78rem', color: '#e94560', cursor: 'pointer', fontWeight: '600' }}
+  >
+    Remind
+  </span>
+)}                </td>
               </tr>
             ))}
           </tbody>
