@@ -29,6 +29,9 @@ const paymentRequestSchema = new mongoose.Schema({
     payment_link: { type: String },
     sent_at: { type: Date },
     paid_at: { type: Date },
+    cancelled_at: { type: Date },
+    last_reminded_at: { type: Date },
+    reminder_count: { type: Number, default: 0 },
 }, { timestamps: true })
 
 module.exports = mongoose.model('PaymentRequest', paymentRequestSchema)

@@ -97,28 +97,56 @@ const getRequestById = async(req, res) => {
     }
     // PATCH cancel a request
 const cancelRequest = async(req, res) => {
+        try {
+            const request = await PaymentRequest.findOne({
+                _id: req.params.id,
+                merchant_id: req.merchant._id
+            })
+
+            if (!request) {
+                return res.status(404).json({ message: 'Request not found' })
+            }
+
+            if (request.status === 'paid') {
+                return res.status(400).json({ message: 'Cannot cancel a paid request' })
+            }
+
+            request.status = 'cancelled'
+            request.cancelled_at = new Date()
+            await request.save()
+
+            res.json({ message: 'Request cancelled', request })
+        } catch (error) {
+            console.error('Cancel request error:', error)
+            res.status(500).json({ message: 'Server error' })
+        }
+    }
+    // POST remind a customer
+const remindRequest = async(req, res) => {
     try {
         const request = await PaymentRequest.findOne({
             _id: req.params.id,
             merchant_id: req.merchant._id
         })
-
         if (!request) {
             return res.status(404).json({ message: 'Request not found' })
         }
-
         if (request.status === 'paid') {
-            return res.status(400).json({ message: 'Cannot cancel a paid request' })
+            return res.status(400).json({ message: 'Request is already paid' })
         }
-
-        request.status = 'cancelled'
-        request.cancelled_at = new Date()
+        // Update last reminded timestamp
+        request.last_reminded_at = new Date()
+        request.reminder_count = (request.reminder_count || 0) + 1
         await request.save()
-
-        res.json({ message: 'Request cancelled', request })
+            // TODO: Send actual SMS/email when Twilio/SendGrid is integrated
+        console.log(`Reminder sent to ${request.customer_name} at ${request.customer_mobile}`)
+        res.json({
+            message: `Reminder sent to ${request.customer_name}`,
+            request
+        })
     } catch (error) {
-        console.error('Cancel request error:', error)
+        console.error('Remind error:', error)
         res.status(500).json({ message: 'Server error' })
     }
 }
-module.exports = { getRequests, createRequest, getRequestById, cancelRequest }
+module.exports = { getRequests, createRequest, getRequestById, cancelRequest, remindRequest }
