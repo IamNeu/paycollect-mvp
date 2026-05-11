@@ -30,14 +30,25 @@ export default function Requests() {
   const [activeTab, setActiveTab] = useState('All Requests')
   const [search, setSearch] = useState('')
   const [counts, setCounts] = useState({ total: 0, pending: 0, partial: 0, paid: 0, failed: 0, outstanding: 0 })
+  const [activePeriod, setActivePeriod] = useState('30 Days')
 
   const tabToStatus = { 'All Requests': '', 'Pending': 'pending', 'Partial': 'partial', 'Paid': 'paid', 'Failed': 'expired' }
-
+const getDateRange = (period) => {
+  const to = new Date()
+  const from = new Date()
+  if (period === 'Today') from.setDate(to.getDate())
+  else if (period === '7 Days') from.setDate(to.getDate() - 7)
+  else if (period === '30 Days') from.setDate(to.getDate() - 30)
+  else if (period === '90 Days') from.setDate(to.getDate() - 90)
+  else if (period === '6 Months') from.setMonth(to.getMonth() - 6)
+  else if (period === '1 Year') from.setFullYear(to.getFullYear() - 1)
+  return { from: from.toISOString(), to: to.toISOString() }
+}
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (!token) { navigate('/login'); return }
     fetchRequests()
-  }, [activeTab])
+  }, [activeTab, activePeriod])
 
   const fetchRequests = async () => {
     try {
@@ -45,6 +56,9 @@ export default function Requests() {
       const status = tabToStatus[activeTab]
       if (status) params.status = status
       if (search) params.search = search
+      const { from, to } = getDateRange(activePeriod)
+      params.from = from
+      params.to = to
 
       const res = await axios.get(`${API}/api/requests`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -69,8 +83,8 @@ export default function Requests() {
   }
 
   const today = new Date()
-  const fromDate = new Date(today); fromDate.setDate(today.getDate() - 30)
-  const fmt = d => d.toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' })
+        const fmt = d => new Date(d).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' })
+        const { from: fromISO } = getDateRange(activePeriod)
 
   return (
     <Layout>
@@ -93,7 +107,7 @@ export default function Requests() {
           <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#888', textTransform: 'uppercase', letterSpacing: '0.7px' }}>Time Period:</span>
           <div style={{ display: 'flex', gap: '6px' }}>
             {['Today', '7 Days', '30 Days', '90 Days', '6 Months', '1 Year'].map(p => (
-              <div key={p} style={{ padding: '5px 13px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '700', background: p === '30 Days' ? '#0f3460' : '#f5f7fb', color: p === '30 Days' ? '#fff' : '#555', border: `1.5px solid ${p === '30 Days' ? '#0f3460' : '#dde1ea'}`, cursor: 'pointer' }}>
+              <div key={p} onClick={() => setActivePeriod(p)} style={{ padding: '5px 13px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '700', background: p === activePeriod ? '#0f3460' : '#f5f7fb', color: p === activePeriod ? '#fff' : '#555', border: `1.5px solid ${p === activePeriod ? '#0f3460' : '#dde1ea'}`, cursor: 'pointer' }}>
                 {p}
               </div>
             ))}
@@ -103,8 +117,8 @@ export default function Requests() {
         {/* Active period */}
         <div style={{ padding: '8px 24px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '0.75rem', color: '#0f3460', fontWeight: '700' }}>📅 Showing data for:</span>
-          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#e94560', background: '#fff0f3', padding: '2px 10px', borderRadius: '20px', border: '1px solid #f5b8c4' }}>
-            {fmt(fromDate)} — {fmt(today)} (30 days)
+         <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#e94560', background: '#fff0f3', padding: '2px 10px', borderRadius: '20px', border: '1px solid #f5b8c4' }}>
+            {fmt(fromISO)} — {fmt(today)} ({activePeriod})
           </span>
         </div>
 
