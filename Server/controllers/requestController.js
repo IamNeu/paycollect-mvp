@@ -58,6 +58,7 @@ const createRequest = async(req, res) => {
         // Create Stripe payment link
 
         let stripeUrl = null
+        console.log('Calling Stripe with amount:', amount_due, 'currency: usd')
         try {
             const stripeLink = await createPaymentLink({
                 customerName: customer_name,
