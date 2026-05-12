@@ -1,6 +1,6 @@
 const PaymentRequest = require('../models/PaymentRequest')
-
-// GET all requests for this merchant
+const { createPaymentLink } = require('../services/stripe')
+    // GET all requests for this merchant
 const getRequests = async(req, res) => {
     try {
         const filter = { merchant_id: req.merchant._id }
@@ -55,6 +55,23 @@ const createRequest = async(req, res) => {
         // Generate a payment link token
         const token = Math.random().toString(36).substring(2, 15)
 
+        // Create Stripe payment link
+
+        let stripeUrl = null
+        try {
+            const stripeLink = await createPaymentLink({
+                customerName: customer_name,
+                amount: amount_due,
+                currency: 'usd',
+                description: description || `Payment request for ${customer_name}`,
+                requestId: token
+            })
+            stripeUrl = stripeLink.url
+        } catch (stripeErr) {
+            console.error('Stripe error:', stripeErr.message)
+                // Continue even if Stripe fails
+        }
+
         const request = await PaymentRequest.create({
             merchant_id: req.merchant._id,
             customer_name,
@@ -66,10 +83,10 @@ const createRequest = async(req, res) => {
             allow_partial: allow_partial !== false,
             description,
             reference_id,
-            payment_link: token,
+            payment_link: stripeUrl || token,
+            stripe_payment_link_id: stripeUrl ? stripeUrl.split('/').pop() : null,
             sent_at: new Date()
         })
-
         res.status(201).json({ request })
     } catch (error) {
         console.error('Create request error:', error)

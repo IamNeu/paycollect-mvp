@@ -27,6 +27,7 @@ const paymentRequestSchema = new mongoose.Schema({
     },
     description: { type: String },
     payment_link: { type: String },
+    stripe_payment_link_id: { type: String },
     sent_at: { type: Date },
     paid_at: { type: Date },
     cancelled_at: { type: Date },
