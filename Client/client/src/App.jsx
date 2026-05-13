@@ -13,6 +13,8 @@ import CustomerProfile from './pages/CustomerProfile.jsx'
 import Settings from './pages/Settings.jsx'
 import Reports from './pages/Reports.jsx'
 import PaymentPage from './pages/PaymentPage.jsx'
+import PaymentSuccess from './pages/PaymentSuccess.jsx'
+
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />       
         <Route path="/login" element={<Login />} />
         <Route path="/pay/:token" element={<PaymentPage />} />
+        <Route path="/pay/success" element={<PaymentSuccess />} />
 
         {/* Protected */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
