@@ -102,8 +102,8 @@ export default function Customers() {
 
       {/* Table */}
       <div style={{ padding: '0 24px 24px', overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-          <thead>
+<table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: '900px' }}>
+            <thead>
             <tr style={{ background: '#f8faff' }}>
               {['', 'Customer', 'Mobile', 'Email', 'Tags', 'Requests', 'Total Paid (₱)', 'Outstanding (₱)', 'Last Activity', 'Actions'].map(h => (
                 <th key={h} style={{ padding: '10px 14px', textAlign: h === 'Total Paid (₱)' || h === 'Outstanding (₱)' ? 'right' : 'left', borderBottom: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: '700', color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
