@@ -2,12 +2,12 @@ const express = require('express')
 const router = express.Router()
 const protect = require('../middleware/auth')
 const PaymentRequest = require('../models/PaymentRequest')
+const Customer = require('../models/Customer')
 
-// GET /api/customers — get unique customers from payment requests
+// GET /api/customers
 router.get('/', protect, async(req, res) => {
     try {
         const { search } = req.query
-
         const match = { merchant_id: req.merchant._id }
         if (search) {
             match.$or = [
@@ -17,7 +17,7 @@ router.get('/', protect, async(req, res) => {
             ]
         }
 
-        const customers = await PaymentRequest.aggregate([
+        const fromRequests = await PaymentRequest.aggregate([
             { $match: match },
             {
                 $group: {
@@ -37,11 +37,37 @@ router.get('/', protect, async(req, res) => {
                         }
                     },
                     last_activity: { $max: '$updatedAt' },
-                    statuses: { $push: '$status' }
                 }
-            },
-            { $sort: { last_activity: -1 } }
+            }
         ])
+
+        const customerMatch = { merchant_id: req.merchant._id }
+        if (search) {
+            customerMatch.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { mobile: { $regex: search, $options: 'i' } },
+                { email: { $regex: search, $options: 'i' } }
+            ]
+        }
+        const fromCustomers = await Customer.find(customerMatch)
+
+        const mobileSet = new Set(fromRequests.map(c => c.mobile))
+        const standaloneOnly = fromCustomers
+            .filter(c => !mobileSet.has(c.mobile))
+            .map(c => ({
+                _id: c._id,
+                name: c.name,
+                mobile: c.mobile,
+                email: c.email,
+                tag: c.tag,
+                total_requests: 0,
+                total_paid: 0,
+                outstanding: 0,
+                last_activity: c.createdAt
+            }))
+
+        const customers = [...fromRequests, ...standaloneOnly]
+            .sort((a, b) => new Date(b.last_activity) - new Date(a.last_activity))
 
         res.json({ customers })
     } catch (err) {
@@ -50,11 +76,32 @@ router.get('/', protect, async(req, res) => {
     }
 })
 
-// GET /api/customers/:mobile — get single customer with all requests
+// POST /api/customers
+router.post('/', protect, async(req, res) => {
+    try {
+        const { name, mobile, email, tag, notes } = req.body
+        if (!name || !mobile) {
+            return res.status(400).json({ message: 'Name and mobile are required' })
+        }
+        const customer = await Customer.create({
+            merchant_id: req.merchant._id,
+            name,
+            mobile,
+            email,
+            tag,
+            notes
+        })
+        res.status(201).json({ customer })
+    } catch (err) {
+        console.error('Create customer error:', err)
+        res.status(500).json({ message: 'Server error' })
+    }
+})
+
+// GET /api/customers/:mobile
 router.get('/:mobile', protect, async(req, res) => {
     try {
         const mobile = decodeURIComponent(req.params.mobile)
-
         const requests = await PaymentRequest.find({
             merchant_id: req.merchant._id,
             customer_mobile: mobile
@@ -75,7 +122,6 @@ router.get('/:mobile', protect, async(req, res) => {
                 .reduce((s, r) => s + (r.amount_due - (r.amount_paid || 0)), 0),
             requests
         }
-
         res.json({ customer })
     } catch (err) {
         console.error('Customer detail error:', err)

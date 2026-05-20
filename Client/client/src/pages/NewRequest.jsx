@@ -437,7 +437,8 @@ export default function NewRequest() {
       <div style={{ background: '#fff', borderRadius: '0 0 12px 12px' }}>
         {activeTab === 'existing' && <ExistingCustomerTab navigate={navigate} />}
         {activeTab === 'new' && <NewCustomerTab navigate={navigate} />}
-        {activeTab === 'bulk' && <BulkUploadTab />}
+        
+      {activeTab === 'bulk' && <BulkUploadTab />}
         {activeTab === 'multi' && <MultiEntryTab />}
       </div>
     </Layout>

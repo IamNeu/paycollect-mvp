@@ -1,5 +1,6 @@
 const PaymentRequest = require('../models/PaymentRequest')
 const { createPaymentLink } = require('../services/stripe')
+const { sendPaymentRequestEmail } = require('../services/email')
     // GET all requests for this merchant
 const getRequests = async(req, res) => {
     try {
@@ -40,6 +41,7 @@ const getRequests = async(req, res) => {
 // POST create a new request
 const createRequest = async(req, res) => {
     try {
+        console.log('Create request body:', req.body)
         const {
             customer_name,
             customer_mobile,
@@ -74,20 +76,41 @@ const createRequest = async(req, res) => {
         }
 
         const request = await PaymentRequest.create({
-            merchant_id: req.merchant._id,
-            customer_name,
-            customer_mobile,
-            customer_email,
-            amount_due,
-            due_date,
-            payment_type: payment_type || 'one_time',
-            allow_partial: allow_partial !== false,
-            description,
-            reference_id,
-            payment_link: stripeUrl || token,
-            stripe_payment_link_id: stripeUrl ? stripeUrl.split('/').pop() : null,
-            sent_at: new Date()
-        })
+                merchant_id: req.merchant._id,
+                customer_name,
+                customer_mobile,
+                customer_email,
+                amount_due,
+                due_date,
+                payment_type: payment_type || 'one_time',
+                allow_partial: allow_partial !== false,
+                description,
+                reference_id,
+                payment_link: stripeUrl || token,
+                stripe_payment_link_id: stripeUrl ? stripeUrl.split('/').pop() : null,
+                sent_at: new Date()
+            })
+            // Send email to customer if email provided
+            // Send email to customer if email provided
+        console.log('Email check:', customer_email, request.payment_link)
+        if (customer_email && request.payment_link) {
+            try {
+                const merchant = req.merchant
+                await sendPaymentRequestEmail({
+                    customerEmail: customer_email,
+                    customerName: customer_name,
+                    merchantName: merchant.company_name,
+                    amount: amount_due,
+                    dueDate: due_date,
+                    paymentLink: request.payment_link,
+                    description: description
+                })
+            } catch (emailErr) {
+                console.error('Email error:', emailErr.message)
+                    // Don't fail if email fails
+            }
+        }
+
         res.status(201).json({ request })
     } catch (error) {
         console.error('Create request error:', error)
