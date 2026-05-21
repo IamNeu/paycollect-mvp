@@ -18,6 +18,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }))
+
 app.use(express.json());
 
 // Routes
@@ -26,6 +28,7 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/pay', require('./routes/pay'));
 app.use('/api/customers', require('./routes/customers'))
+app.use('/api/webhooks', require('./routes/webhooks'))
 
 // Test route
 app.get('/', (req, res) => {
