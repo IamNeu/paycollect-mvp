@@ -60,6 +60,7 @@ const createRequest = async(req, res) => {
         // Create Stripe payment link
 
         let stripeUrl = null
+        let stripeLinkId = null
         console.log('Calling Stripe with amount:', amount_due, 'currency: usd')
         try {
             const stripeLink = await createPaymentLink({
@@ -70,9 +71,10 @@ const createRequest = async(req, res) => {
                 requestId: token
             })
             stripeUrl = stripeLink.url
+            stripeLinkId = stripeLink.id
+            console.log('Stripe link ID:', stripeLinkId)
         } catch (stripeErr) {
             console.error('Stripe error:', stripeErr.message)
-                // Continue even if Stripe fails
         }
 
         const request = await PaymentRequest.create({
@@ -87,7 +89,7 @@ const createRequest = async(req, res) => {
                 description,
                 reference_id,
                 payment_link: stripeUrl || token,
-                stripe_payment_link_id: stripeUrl ? stripeUrl.split('/').pop() : null,
+                stripe_payment_link_id: stripeLinkId || null,
                 sent_at: new Date()
             })
             // Send email to customer if email provided
