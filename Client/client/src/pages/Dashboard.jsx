@@ -16,11 +16,21 @@ export default function Dashboard() {
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (!token) { navigate('/login'); return }
-axios.get(`${API}/api/dashboard/stats`, {
+    
+    // Flow B — sync pending payments on app open
+    axios.post(`${API}/api/requests/sync`, {}, {
       headers: { Authorization: `Bearer ${token}` }
-   }).then(res => setStats(res.data)).catch(err => {
+    }).then(res => {
+      console.log('🔄 Sync complete:', res.data)
+    }).catch(err => {
+      console.log('Sync error:', err.message)
+    })
+
+    // Load dashboard stats
+    axios.get(`${API}/api/dashboard/stats`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => setStats(res.data)).catch(err => {
       console.log('Dashboard stats error:', err.response?.status)
-      // Don't logout on stats failure - just show default values
     })
   }, [])
 
