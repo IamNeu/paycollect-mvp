@@ -30,6 +30,29 @@ app.use('/api/pay', require('./routes/pay'));
 app.use('/api/customers', require('./routes/customers'))
 app.use('/api/webhooks', require('./routes/webhooks'))
 
+// Flow C — Daily bulk sync cron job (runs every day at 8am PHT)
+const cron = require('node-cron')
+const { syncPendingPayments } = require('./services/stripeSync')
+const Merchant = require('./models/Merchant')
+
+cron.schedule('0 8 * * *', async() => {
+    console.log('🕗 Running daily bulk payment sync...')
+    try {
+        const merchants = await Merchant.find({ status: 'active' })
+        console.log('Syncing for', merchants.length, 'merchants')
+        for (const merchant of merchants) {
+            await syncPendingPayments(merchant._id)
+        }
+        console.log('✅ Daily bulk sync complete')
+    } catch (err) {
+        console.error('Daily sync error:', err.message)
+    }
+}, {
+    timezone: 'Asia/Manila'
+})
+
+console.log('✅ Daily sync cron job scheduled for 8am PHT')
+
 // Test route
 app.get('/', (req, res) => {
     res.json({ message: 'PayCollect API is running! 🚀' });
