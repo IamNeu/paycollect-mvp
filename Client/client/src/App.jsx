@@ -14,6 +14,8 @@ import Settings from './pages/Settings.jsx'
 import Reports from './pages/Reports.jsx'
 import PaymentPage from './pages/PaymentPage.jsx'
 import PaymentSuccess from './pages/PaymentSuccess.jsx'
+import SignUp from './pages/SignUp.jsx'
+
 
 
 function App() {
@@ -37,6 +39,9 @@ function App() {
         <Route path="/customers/:id" element={<ProtectedRoute><CustomerProfile /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/signup" element={<SignUp />} />
+
+
       </Routes>
     </Router>
   )

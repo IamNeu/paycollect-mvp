@@ -128,7 +128,7 @@ export default function LandingPage() {
             ))}
           </div>
           <button className="lp-btn lp-btn-outline" onClick={() => navigate('/login')} style={{ padding: '8px 18px' }}>Log in</button>
-          <button className="lp-btn lp-btn-amber" onClick={() => navigate('/login')} style={{ padding: '8px 18px' }}>Get started →</button>
+          <button className="lp-btn lp-btn-amber" onClick={() => navigate('/signup')} style={{ padding: '8px 18px' }}>Sign Up </button>
         </div>
       </nav>
 
@@ -169,10 +169,10 @@ export default function LandingPage() {
             </p>
 
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '44px', animation: 'fadeUp .7s ease .3s both' }}>
-              <button className="lp-btn lp-btn-amber lp-btn-xl" onClick={() => navigate('/login')}>
+              <button className="lp-btn lp-btn-amber lp-btn-xl" onClick={() => navigate('/signup')}>
                 {t('Start collecting free →', 'Magsimulang mag-kolekta nang libre →')}
               </button>
-              <button className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => navigate('/login')}>
+              <button className="lp-btn lp-btn-ghost lp-btn-lg" onClick={() => navigate('/signup')}>
                 {t('Request a demo', 'Humiling ng demo')}
               </button>
             </div>
@@ -569,7 +569,7 @@ export default function LandingPage() {
                   ))}
                 </div>
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/signup')}
                   style={{
                     width: '100%', padding: '13px', borderRadius: '10px', fontFamily: "'Plus Jakarta Sans', sans-serif",
                     fontWeight: 800, fontSize: '.9rem', cursor: 'pointer', transition: 'all .2s',
@@ -600,7 +600,7 @@ export default function LandingPage() {
           {t('Join 8,400+ Philippine merchants already using PayCollect. Free to start, no setup fees.','Sumali sa 8,400+ Philippine merchants na gumagamit na ng PayCollect. Libre magsimula.')}
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button className="lp-btn lp-btn-primary lp-btn-xl" onClick={() => navigate('/login')}>
+          <button className="lp-btn lp-btn-primary lp-btn-xl" onClick={() => navigate('/signup')}>
             {t('Create free account →','Gumawa ng libreng account →')}
           </button>
           <button className="lp-btn lp-btn-outline lp-btn-xl" onClick={() => navigate('/login')} style={{ border: '2px solid var(--teal-d)', color: 'var(--teal-d)' }}>
