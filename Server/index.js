@@ -10,8 +10,11 @@ const app = express();
 app.use(cors({
     origin: [
         'https://paycollect-mvp.vercel.app',
+        'https://get-pay-collect.com',
+        'https://www.get-pay-collect.com',
         'http://localhost:5173',
         'http://localhost:5174'
+
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
