@@ -37,6 +37,7 @@ const merchantSchema = new mongoose.Schema({
         enum: ['active', 'suspended', 'trial'],
         default: 'trial'
     },
+    google_id: { type: String },
     phone: { type: String },
     address: { type: String },
     website: { type: String },

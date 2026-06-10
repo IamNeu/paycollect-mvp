@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
+import { useGoogleLogin } from '@react-oauth/google'
 import API from '../apiConfig'
 
 export default function SignUp() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(1) // 1 = account details, 2 = payment
+  const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
     company_name: '',
@@ -23,7 +24,6 @@ export default function SignUp() {
   })
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
-  const handleCardChange = (e) => setCard({ ...card, [e.target.name]: e.target.value })
 
   const formatCardNumber = (val) => {
     return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
@@ -34,6 +34,26 @@ export default function SignUp() {
     if (digits.length >= 3) return digits.slice(0, 2) + '/' + digits.slice(2)
     return digits
   }
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true)
+      try {
+        const res = await axios.post(`${API}/api/auth/google`, {
+          access_token: tokenResponse.access_token
+        })
+        localStorage.setItem('token', res.data.token)
+        localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
+        toast.success('Welcome to PayCollect! 🎉')
+        setStep(2)
+      } catch (err) {
+        toast.error(err.response?.data?.message || 'Google login failed')
+      } finally {
+        setLoading(false)
+      }
+    },
+    onError: () => toast.error('Google login failed')
+  })
 
   const handleStep1 = (e) => {
     e.preventDefault()
@@ -54,9 +74,8 @@ export default function SignUp() {
 
   const handleStep2 = async (e) => {
     e.preventDefault()
-console.log('Card state:', card)
-if (!card.number || !card.name || !card.expiry || !card.cvc) {
-	      toast.error('All card fields are required')
+    if (!card.number || !card.name || !card.expiry || !card.cvc) {
+      toast.error('All card fields are required')
       return
     }
     setLoading(true)
@@ -107,7 +126,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
         gridTemplateColumns: step === 1 ? '1fr 1fr' : '1fr',
       }}>
 
-        {/* ── LEFT PANEL (Step 1 only) ── */}
+        {/* LEFT PANEL - Step 1 only */}
         {step === 1 && (
           <div style={{
             background: 'linear-gradient(135deg, #0f3460 0%, #1a5ca8 100%)',
@@ -127,7 +146,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
               <div style={{ fontSize: '20px', fontWeight: '800', color: '#fff' }}>PayCollect</div>
             </div>
 
-            {/* Trial badge */}
+            {/* Trial badge + features */}
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ display: 'inline-block', background: '#e94560', color: '#fff', fontSize: '11px', fontWeight: '700', padding: '5px 14px', borderRadius: '20px', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '24px' }}>
                 7-Day Free Trial
@@ -140,23 +159,20 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
                 No charges for 7 days. Cancel anytime.
               </p>
 
-              {/* Features */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {[
-                  'Send payment requests via SMS & email',
-                  'Accept GCash, Maya, Visa & Mastercard',
-                  'Real-time dashboard & KPI tracking',
-                  'Automated reminders for overdue payments',
-                  'Full reconciliation & settlement reports',
-                ].map((f, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(233,69,96,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ color: '#e94560', fontSize: '10px', fontWeight: '700' }}>✓</span>
-                    </div>
-                    <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>{f}</span>
+              {[
+                'Send payment requests via SMS & email',
+                'Accept cards, Apple Pay & Google Pay',
+                'Real-time dashboard & KPI tracking',
+                'Automated reminders for overdue payments',
+                'Full reconciliation & settlement reports',
+              ].map((f, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'rgba(233,69,96,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ color: '#e94560', fontSize: '10px', fontWeight: '700' }}>✓</span>
                   </div>
-                ))}
-              </div>
+                  <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>{f}</span>
+                </div>
+              ))}
             </div>
 
             {/* Pricing */}
@@ -175,7 +191,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
           </div>
         )}
 
-        {/* ── RIGHT PANEL ── */}
+        {/* RIGHT PANEL */}
         <div style={{ padding: step === 1 ? '56px 48px' : '48px', display: 'flex', flexDirection: 'column', justifyContent: 'center', maxWidth: step === 2 ? '520px' : 'none', margin: step === 2 ? '0 auto' : '0', width: '100%' }}>
 
           {/* Step indicator */}
@@ -188,7 +204,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
                   color: s <= step ? '#fff' : '#aaa',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '12px', fontWeight: '700'
-                }}>{s <= step - 1 ? '✓' : s}</div>
+                }}>{s < step ? '✓' : s}</div>
                 <span style={{ fontSize: '12px', color: s === step ? '#0f3460' : '#aaa', fontWeight: s === step ? '600' : '400' }}>
                   {s === 1 ? 'Account' : 'Payment'}
                 </span>
@@ -201,6 +217,55 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
             <>
               <h2 style={{ fontSize: '26px', fontWeight: '800', color: '#0f3460', marginBottom: '6px' }}>Create your account</h2>
               <p style={{ fontSize: '13px', color: '#888', marginBottom: '28px' }}>Start your 7-day free trial — no credit card needed yet.</p>
+
+              {/* Google Login Button */}
+              <button
+                type="button"
+                onClick={() => googleLogin()}
+                disabled={loading}
+                style={{
+                  width: '100%', padding: '12px', background: '#fff',
+                  border: '1.5px solid #e2e8f0', borderRadius: '10px',
+                  fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: '10px', marginBottom: '16px', color: '#333',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                  <path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/>
+                  <path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/>
+                  <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
+                  <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
+                </svg>
+                {loading ? 'Signing in...' : 'Continue with Google'}
+              </button>
+
+              {/* Apple Login Button */}
+              <button
+                type="button"
+                onClick={() => toast('Apple login coming soon!')}
+                style={{
+                  width: '100%', padding: '12px', background: '#000',
+                  border: '1.5px solid #000', borderRadius: '10px',
+                  fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  gap: '10px', marginBottom: '20px', color: '#fff',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 814 1000" fill="white">
+                  <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.4-150.3-87.7c-52.3-52-100.3-134.6-100.3-212.3C.3 375.7 168.4 174.6 364.4 174.6c76.9 0 142.9 37.4 190.4 37.4 45.6 0 121.2-40.2 207.4-40.2 32 0 118.1 2.6 179.5 82.1z"/>
+                  <path d="M500.8 75.4c27.9-33.2 48.2-79.1 48.2-124.9 0-6.3-.6-12.7-1.9-17.6-45.6 1.9-99.2 30.4-131.8 67.6-25.7 28.5-49.4 74.4-49.4 121 0 7 1.3 14 1.9 16.3 3.2.6 8.3 1.3 13.4 1.3 40.9 0 92.4-27.2 119.6-63.7z"/>
+                </svg>
+                Continue with Apple
+              </button>
+
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                <span style={{ fontSize: '12px', color: '#aaa', fontWeight: '500' }}>or continue with email</span>
+                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+              </div>
 
               <form onSubmit={handleStep1}>
                 <div style={{ marginBottom: '16px' }}>
@@ -215,7 +280,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
 
                 <div style={{ marginBottom: '16px' }}>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '6px' }}>Phone Number</label>
-                  <input name="phone" value={form.phone} onChange={handleChange} placeholder="+63 9XX XXX XXXX" style={{ width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: '9px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: '#f8faff' }} />
+                  <input name="phone" value={form.phone} onChange={handleChange} placeholder="+1 XXX XXX XXXX" style={{ width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: '9px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: '#f8faff' }} />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
@@ -234,7 +299,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
                 </button>
 
                 <p style={{ fontSize: '11px', color: '#aaa', textAlign: 'center', marginTop: '14px', lineHeight: 1.6 }}>
-                  By signing up you agree to our <a href="#" style={{ color: '#0f3460' }}>Terms</a> and <a href="#" style={{ color: '#0f3460' }}>Privacy Policy</a>
+                  By signing up you agree to our <a href="/tos" style={{ color: '#0f3460' }}>Terms</a> and <a href="/privacy" style={{ color: '#0f3460' }}>Privacy Policy</a>
                 </p>
 
                 <p style={{ fontSize: '13px', color: '#888', textAlign: 'center', marginTop: '16px' }}>
@@ -303,7 +368,7 @@ if (!card.number || !card.name || !card.expiry || !card.cvc) {
                   <input
                     name="name"
                     value={card.name}
-                    onChange={handleCardChange}
+                    onChange={e => setCard({ ...card, name: e.target.value })}
                     placeholder="Name on card"
                     style={{ width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: '9px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: '#f8faff' }}
                   />
