@@ -89,8 +89,7 @@ export default function SignUp() {
       localStorage.setItem('token', res.data.token)
       localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
       toast.success('Welcome to PayCollect! Your 7-day trial has started 🎉')
-      navigate('/dashboard')
-    } catch (err) {
+navigate('/connect-pg')    } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
     } finally {
       setLoading(false)

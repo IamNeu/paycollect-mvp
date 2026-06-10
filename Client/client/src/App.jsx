@@ -19,6 +19,8 @@ import Cancellation from './pages/Cancellation.jsx'
 import Privacy from './pages/Privacy.jsx'
 import TOS from './pages/TOS.jsx'
 import Support from './pages/Support.jsx'
+import ConnectPG from './pages/ConnectPG.jsx'
+import SetupComplete from './pages/SetupComplete.jsx'
 
 
 function App() {
@@ -47,6 +49,8 @@ function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/tos" element={<TOS />} />
         <Route path="/support" element={<Support />} />
+        <Route path="/connect-pg" element={<ConnectPG />} />
+<Route path="/setup-complete" element={<SetupComplete />} />
 
       </Routes>
     </Router>

@@ -56,5 +56,16 @@ router.post('/google', async(req, res) => {
         res.status(500).json({ message: 'Server error' })
     }
 })
+router.post('/settings/test-stripe', protect, async(req, res) => {
+    try {
+        const { secret_key } = req.body
+        const Stripe = require('stripe')
+        const stripe = Stripe(secret_key, { timeout: 5000 })
+        await stripe.accounts.retrieve()
+        res.json({ success: true, message: 'Connection successful' })
+    } catch (err) {
+        res.status(400).json({ message: 'Invalid API key' })
+    }
+})
 
 module.exports = router

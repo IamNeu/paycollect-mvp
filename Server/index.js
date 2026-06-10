@@ -32,6 +32,7 @@ app.use('/api/requests', require('./routes/requests'));
 app.use('/api/pay', require('./routes/pay'));
 app.use('/api/customers', require('./routes/customers'))
 app.use('/api/webhooks', require('./routes/webhooks'))
+app.use('/api/settings', require('./routes/settings'))
 
 // Flow C — Daily bulk sync cron job (runs every day at 8am PHT)
 const cron = require('node-cron')
