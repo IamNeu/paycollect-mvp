@@ -80,15 +80,18 @@ export default function SignUp() {
     }
     setLoading(true)
     try {
-      const res = await axios.post(`${API}/api/auth/register`, {
-        company_name: form.company_name,
-        email: form.email,
-        password: form.password,
-        phone: form.phone,
-      })
-      localStorage.setItem('token', res.data.token)
-      localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
-      toast.success('Welcome to PayCollect! Your 7-day trial has started 🎉')
+      // If user signed in via Google, token already exists — skip registration
+      const existingToken = localStorage.getItem('token')
+      if (!existingToken) {
+        const res = await axios.post(`${API}/api/auth/register`, {
+          company_name: form.company_name,
+          email: form.email,
+          password: form.password,
+          phone: form.phone,
+        })
+        localStorage.setItem('token', res.data.token)
+        localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
+      }
 navigate('/connect-pg')    } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
     } finally {

@@ -21,7 +21,7 @@ router.post('/google', async(req, res) => {
             headers: { Authorization: `Bearer ${access_token}` }
         })
         const googleUser = await googleRes.json()
-
+        console.log('Google user data:', googleUser)
         if (!googleUser.email) {
             return res.status(400).json({ message: 'Failed to get Google user info' })
         }
