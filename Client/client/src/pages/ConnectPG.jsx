@@ -7,7 +7,7 @@ import API from '../apiConfig'
 export default function ConnectPG() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('stripe')
-  const [stripeMode, setStripeMode] = useState('manual')
+  const [stripeMode, setStripeMode] = useState('oauth')
   const [apiKeys, setApiKeys] = useState({ publishable_key: '', secret_key: '' })
   const [testing, setTesting] = useState(false)
   const [tested, setTested] = useState(false)
@@ -182,7 +182,7 @@ export default function ConnectPG() {
                 <div style={{ textAlign: 'center', padding: '32px 24px' }}>
                   <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
                   <p style={{ fontSize: '14px', color: '#666', marginBottom: '24px', lineHeight: 1.6 }}>
-                    Stripe OAuth integration coming soon. Please use manual entry for now.
+                    Stripe OAuth integration is coming soon. Please use manual API key entry for now.
                   </p>
                   <button
                     type="button"
@@ -198,7 +198,7 @@ export default function ConnectPG() {
                       cursor: 'pointer',
                     }}
                   >
-                    🔑 Enter API Keys Manually
+                    Switch to Manual Entry
                   </button>
                 </div>
               ) : (

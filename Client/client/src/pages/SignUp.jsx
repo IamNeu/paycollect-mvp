@@ -79,6 +79,7 @@ export default function SignUp() {
       return
     }
     setLoading(true)
+    const loadingStartedAt = Date.now()
     try {
       // If user signed in via Google, token already exists — skip registration
       const existingToken = localStorage.getItem('token')
@@ -92,10 +93,14 @@ export default function SignUp() {
         localStorage.setItem('token', res.data.token)
         localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
       }
-      navigate('/connect-pg')
+      const elapsed = Date.now() - loadingStartedAt
+      const remaining = Math.max(0, 1500 - elapsed)
+      setTimeout(() => {
+        navigate('/connect-pg')
+        setLoading(false)
+      }, remaining)
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
-    } finally {
       setLoading(false)
     }
   }
@@ -118,8 +123,8 @@ export default function SignUp() {
       <div style={{ position: 'fixed', top: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(233,69,96,0.08)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: '-80px', left: '-80px', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(233,69,96,0.05)', pointerEvents: 'none' }} />
 
-      {/* Step 2 loading overlay */}
-      {step === 2 && loading && (
+      {/* Loading overlay */}
+      {loading && (
         <div style={{
           position: 'fixed',
           inset: 0,
