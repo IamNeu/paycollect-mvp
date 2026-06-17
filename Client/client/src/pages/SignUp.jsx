@@ -122,11 +122,8 @@ export default function SignUp() {
       {step === 2 && loading && (
         <div style={{
           position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(10, 22, 40, 0.92)',
+          inset: 0,
+          background: 'rgba(10, 22, 40, 0.88)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -136,7 +133,7 @@ export default function SignUp() {
           <div style={{
             width: '56px',
             height: '56px',
-            border: '4px solid rgba(255, 255, 255, 0.2)',
+            border: '4px solid rgba(233, 69, 96, 0.25)',
             borderTop: '4px solid #e94560',
             borderRadius: '50%',
             animation: 'signupSpin 0.8s linear infinite',
