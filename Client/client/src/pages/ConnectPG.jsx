@@ -20,7 +20,7 @@ export default function ConnectPG() {
     }
     setTesting(true)
     try {
-      const res = await axios.post(`${API}/api/settings/test-stripe`, {
+      await axios.post(`${API}/api/settings/test-stripe`, {
         secret_key: apiKeys.secret_key
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -35,11 +35,19 @@ export default function ConnectPG() {
     }
   }
 
-  const handleSaveAndContinue = async () => {
-    if (activeTab === 'stripe' && stripeMode === 'oauth') {
-      toast.error('Please use manual entry to connect Stripe for now')
-      return
+  const handleStripeOAuth = async () => {
+    try {
+      const res = await axios.get(`${API}/api/auth/stripe-connect-url`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+      window.location.href = res.data.url
+    } catch (err) {
+      toast.error('OAuth not available yet. Please use manual entry.')
+      setStripeMode('manual')
     }
+  }
+
+  const handleSaveAndContinue = async () => {
     if (activeTab === 'stripe' && stripeMode === 'manual' && !tested) {
       toast.error('Please test your connection first')
       return
@@ -181,24 +189,44 @@ export default function ConnectPG() {
               {stripeMode === 'oauth' ? (
                 <div style={{ textAlign: 'center', padding: '32px 24px' }}>
                   <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f3460', marginBottom: '8px' }}>Connect via Stripe OAuth</h3>
                   <p style={{ fontSize: '14px', color: '#666', marginBottom: '24px', lineHeight: 1.6 }}>
-                    Stripe OAuth integration is coming soon. Please use manual API key entry for now.
+                    The easiest way to connect. Click below to authorize PayCollect to access your Stripe account securely.
                   </p>
+
+                  {/* Permissions list */}
+                  <div style={{ background: '#f8f9ff', border: '1.5px solid #c7d2f0', borderRadius: '10px', padding: '14px', marginBottom: '24px', textAlign: 'left' }}>
+                    <div style={{ fontWeight: '700', color: '#0f3460', marginBottom: '8px', fontSize: '13px' }}>PayCollect will be able to:</div>
+                    {['View your account details', 'Create payment links', 'Receive webhook notifications', 'View payment history'].map((p, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', fontSize: '13px', color: '#555' }}>
+                        <span style={{ color: '#22c55e', fontWeight: '700' }}>✓</span>
+                        <span>{p}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleStripeOAuth}
+                    style={{
+                      width: '100%', padding: '13px', background: '#635bff', color: '#fff',
+                      border: 'none', borderRadius: '10px', fontSize: '15px',
+                      fontWeight: '700', cursor: 'pointer', marginBottom: '12px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                    }}
+                  >
+                    ⚡ Connect with Stripe
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setStripeMode('manual')}
                     style={{
-                      padding: '11px 24px',
-                      background: '#635bff',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '14px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
+                      background: 'transparent', color: '#888', border: 'none',
+                      fontSize: '13px', cursor: 'pointer', textDecoration: 'underline'
                     }}
                   >
-                    Switch to Manual Entry
+                    Or enter API keys manually
                   </button>
                 </div>
               ) : (
@@ -273,12 +301,12 @@ export default function ConnectPG() {
             </button>
             <button
               onClick={handleSaveAndContinue}
-              disabled={connecting || (activeTab === 'stripe' && (stripeMode === 'oauth' || (stripeMode === 'manual' && !tested)))}
+              disabled={connecting || (activeTab === 'stripe' && stripeMode === 'manual' && !tested)}
               style={{
                 flex: 2, padding: '12px',
-                background: connecting ? '#ccc' : (activeTab === 'stripe' && (stripeMode === 'oauth' || (stripeMode === 'manual' && !tested))) ? '#ccc' : '#e94560',
+                background: connecting || (activeTab === 'stripe' && stripeMode === 'manual' && !tested) ? '#ccc' : '#e94560',
                 color: '#fff', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '700',
-                cursor: connecting || (activeTab === 'stripe' && (stripeMode === 'oauth' || (stripeMode === 'manual' && !tested))) ? 'not-allowed' : 'pointer'
+                cursor: connecting || (activeTab === 'stripe' && stripeMode === 'manual' && !tested) ? 'not-allowed' : 'pointer'
               }}
             >
               {connecting ? 'Saving...' : 'Save & Continue →'}

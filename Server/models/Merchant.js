@@ -38,6 +38,8 @@ const merchantSchema = new mongoose.Schema({
         default: 'trial'
     },
     google_id: { type: String },
+    stripe_account_id: { type: String },
+    stripe_connected: { type: Boolean, default: false },
     phone: { type: String },
     address: { type: String },
     website: { type: String },
@@ -50,6 +52,8 @@ const merchantSchema = new mongoose.Schema({
         overdue_reminders: { type: Boolean, default: true },
         daily_summary: { type: Boolean, default: false }
     },
+    stripe_account_id: { type: String },
+    stripe_connected: { type: Boolean, default: false },
     gateway_configs: [{
         gateway: { type: String },
         api_key: { type: String },

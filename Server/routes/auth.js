@@ -68,4 +68,75 @@ router.post('/settings/test-stripe', protect, async(req, res) => {
     }
 })
 
+// Stripe OAuth — generate authorization URL
+router.get('/stripe-connect-url', protect, (req, res) => {
+    const clientId = process.env.STRIPE_CLIENT_ID
+    const redirectUri = `${process.env.BACKEND_URL || 'https://paycollect-api.onrender.com'}/api/auth/stripe-callback`
+    const state = req.merchant._id.toString()
+
+    const url = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
+
+    res.json({ url })
+})
+
+// Stripe OAuth callback
+router.get('/stripe-callback', async(req, res) => {
+    try {
+        const { code, state } = req.query
+
+        // Exchange code for access token
+        const Stripe = require('stripe')
+        const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
+
+        const response = await stripe.oauth.token({
+            grant_type: 'authorization_code',
+            code,
+        })
+
+        const connectedAccountId = response.stripe_user_id
+
+        // Save to merchant
+        await Merchant.findByIdAndUpdate(state, {
+            stripe_account_id: connectedAccountId,
+            stripe_connected: true
+        })
+
+        // Redirect to setup complete
+        res.redirect(`${process.env.FRONTEND_URL || 'https://get-pay-collect.com'}/setup-complete`)
+    } catch (err) {
+        console.error('Stripe OAuth error:', err)
+        res.redirect(`${process.env.FRONTEND_URL || 'https://get-pay-collect.com'}/connect-pg?error=oauth_failed`)
+    }
+})
+
+// Stripe OAuth — generate authorization URL
+router.get('/stripe-connect-url', protect, (req, res) => {
+    const clientId = process.env.STRIPE_CLIENT_ID
+    const redirectUri = `${process.env.BACKEND_URL}/api/auth/stripe-callback`
+    const state = req.merchant._id.toString()
+    const url = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
+    res.json({ url })
+})
+
+// Stripe OAuth callback
+router.get('/stripe-callback', async(req, res) => {
+    try {
+        const { code, state } = req.query
+        const Stripe = require('stripe')
+        const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
+        const response = await stripe.oauth.token({
+            grant_type: 'authorization_code',
+            code,
+        })
+        const connectedAccountId = response.stripe_user_id
+        await Merchant.findByIdAndUpdate(state, {
+            stripe_account_id: connectedAccountId,
+            stripe_connected: true
+        })
+        res.redirect(`${process.env.FRONTEND_URL}/setup-complete`)
+    } catch (err) {
+        console.error('Stripe OAuth error:', err)
+        res.redirect(`${process.env.FRONTEND_URL}/connect-pg?error=oauth_failed`)
+    }
+})
 module.exports = router
