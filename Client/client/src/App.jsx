@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import ProtectedRoute from './components/ProtectedRoute'
-import Login from './pages/Login.jsx'
+import SignIn from './pages/SignIn.jsx'
 import LandingPage from './pages/LandingPage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Requests from './pages/Requests.jsx'
@@ -22,7 +22,6 @@ import Support from './pages/Support.jsx'
 import ConnectPG from './pages/ConnectPG.jsx'
 import SetupComplete from './pages/SetupComplete.jsx'
 
-
 function App() {
   return (
     <Router>
@@ -30,7 +29,8 @@ function App() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />       
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<SignIn />} />
+        <Route path="/signin" element={<SignIn />} />
         <Route path="/pay/:token" element={<PaymentPage />} />
         <Route path="/pay/success" element={<PaymentSuccess />} />
 
@@ -50,8 +50,7 @@ function App() {
         <Route path="/tos" element={<TOS />} />
         <Route path="/support" element={<Support />} />
         <Route path="/connect-pg" element={<ConnectPG />} />
-<Route path="/setup-complete" element={<SetupComplete />} />
-
+        <Route path="/setup-complete" element={<SetupComplete />} />
       </Routes>
     </Router>
   )

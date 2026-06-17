@@ -127,7 +127,7 @@ export default function LandingPage() {
               }}>{l}</button>
             ))}
           </div>
-          <button className="lp-btn lp-btn-outline" onClick={() => navigate('/login')} style={{ padding: '8px 18px' }}>Log in</button>
+          <button className="lp-btn lp-btn-outline" onClick={() => navigate('/signin')} style={{ padding: '8px 18px' }}>Log in</button>
           <button className="lp-btn lp-btn-amber" onClick={() => navigate('/signup')} style={{ padding: '8px 18px' }}>Sign Up </button>
         </div>
       </nav>
@@ -603,7 +603,7 @@ export default function LandingPage() {
           <button className="lp-btn lp-btn-primary lp-btn-xl" onClick={() => navigate('/signup')}>
             {t('Create free account →','Gumawa ng libreng account →')}
           </button>
-          <button className="lp-btn lp-btn-outline lp-btn-xl" onClick={() => navigate('/login')} style={{ border: '2px solid var(--teal-d)', color: 'var(--teal-d)' }}>
+          <button className="lp-btn lp-btn-outline lp-btn-xl" onClick={() => navigate('/signin')} style={{ border: '2px solid var(--teal-d)', color: 'var(--teal-d)' }}>
             {t('Talk to sales','Kausapin ang sales')}
           </button>
         </div>

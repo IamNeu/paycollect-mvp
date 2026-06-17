@@ -19,7 +19,7 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('merchant')
-    navigate('/login')
+    navigate('/signin')
   }
 
   return (
