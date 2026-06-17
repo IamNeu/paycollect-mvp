@@ -92,7 +92,8 @@ export default function SignUp() {
         localStorage.setItem('token', res.data.token)
         localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
       }
-navigate('/connect-pg')    } catch (err) {
+      navigate('/connect-pg')
+    } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed')
     } finally {
       setLoading(false)
@@ -116,6 +117,41 @@ navigate('/connect-pg')    } catch (err) {
       {/* Decorative circles */}
       <div style={{ position: 'fixed', top: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(233,69,96,0.08)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: '-80px', left: '-80px', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(233,69,96,0.05)', pointerEvents: 'none' }} />
+
+      {/* Step 2 loading overlay */}
+      {step === 2 && loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(10, 22, 40, 0.92)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            border: '4px solid rgba(255, 255, 255, 0.2)',
+            borderTop: '4px solid #e94560',
+            borderRadius: '50%',
+            animation: 'signupSpin 0.8s linear infinite',
+            marginBottom: '20px',
+          }} />
+          <p style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>
+            Setting up your account...
+          </p>
+          <style>{`
+            @keyframes signupSpin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
 
       <div style={{
         width: '100%',
