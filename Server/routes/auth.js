@@ -58,13 +58,30 @@ router.post('/settings/test-stripe', protect, async(req, res) => {
     }
 })
 
-router.get('/stripe-connect-url', protect, (req, res) => {
-    const clientId = process.env.STRIPE_CLIENT_ID
-    const redirectUri = `${process.env.BACKEND_URL}/api/auth/stripe-callback`
-    const state = req.merchant._id.toString()
-    const url = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${clientId}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
-    console.log('Stripe OAuth URL:', url)
-    res.json({ url })
+router.get('/stripe-connect-url', protect, async(req, res) => {
+    try {
+        const Stripe = require('stripe')
+        const stripe = Stripe(process.env.STRIPE_SECRET_KEY)
+        const account = await stripe.accounts.create({
+            type: 'standard',
+            country: 'IN',
+
+        })
+
+        await Merchant.findByIdAndUpdate(req.merchant._id, {
+            stripe_account_id: account.id,
+        })
+        const accountLink = await stripe.accountLinks.create({
+            account: account.id,
+            refresh_url: `${process.env.FRONTEND_URL}/connect-pg?error=refresh`,
+            return_url: `${process.env.FRONTEND_URL}/setup-complete`,
+            type: 'account_onboarding',
+        })
+        res.json({ url: accountLink.url })
+    } catch (err) {
+        console.error('Stripe Account Link error:', err.message)
+        res.status(500).json({ message: 'Failed to create Stripe connection' })
+    }
 })
 
 router.get('/stripe-callback', async(req, res) => {

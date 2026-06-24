@@ -6,7 +6,8 @@ const sendPaymentRequestEmail = async({ customerEmail, customerName, merchantNam
         const formattedDate = new Date(dueDate).toLocaleDateString('en-PH', { day: 'numeric', month: 'long', year: 'numeric' })
 
         await resend.emails.send({
-                    from: 'PayCollect <onboarding@resend.dev>',
+                    from: 'payments@get-pay-collect.com',
+
                     to: customerEmail,
                     subject: `Payment Request — ₱${formattedAmount} due ${formattedDate}`,
                     html: `
