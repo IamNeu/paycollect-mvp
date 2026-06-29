@@ -11,9 +11,17 @@ const snsClient = new SNSClient({
 const sendSMS = async({ phoneNumber, message }) => {
     try {
         // Format phone number — must include country code
-        let formattedNumber = phoneNumber.toString().trim()
+        let formattedNumber = phoneNumber.toString().trim().replace(/\s/g, '')
         if (!formattedNumber.startsWith('+')) {
-            formattedNumber = '+' + formattedNumber
+            // If starts with 91 (India) or other country code
+            if (formattedNumber.startsWith('91') && formattedNumber.length === 12) {
+                formattedNumber = '+' + formattedNumber
+            } else if (formattedNumber.length === 10) {
+                // Assume India number
+                formattedNumber = '+91' + formattedNumber
+            } else {
+                formattedNumber = '+' + formattedNumber
+            }
         }
 
         const command = new PublishCommand({
