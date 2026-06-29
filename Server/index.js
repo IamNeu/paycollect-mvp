@@ -33,8 +33,8 @@ app.use('/api/pay', require('./routes/pay'));
 app.use('/api/customers', require('./routes/customers'))
 app.use('/api/webhooks', require('./routes/webhooks'))
 app.use('/api/settings', require('./routes/settings'))
-
-// Flow C — Daily bulk sync cron job (runs every day at 8am PHT)
+app.use('/api/upload', require('./routes/upload'))
+    // Flow C — Daily bulk sync cron job (runs every day at 8am PHT)
 const cron = require('node-cron')
 const { syncPendingPayments } = require('./services/stripeSync')
 const Merchant = require('./models/Merchant')

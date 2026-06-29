@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -10,6 +10,8 @@ export default function Customers() {
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -26,31 +28,67 @@ export default function Customers() {
       setCustomers(res.data.customers || [])
     } catch (err) {
       if (err.response?.status === 401) navigate('/login')
-      // If endpoint doesn't exist yet, use empty array silently
     } finally {
       setLoading(false)
     }
   }
 
+  const handleBulkUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ]
+
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/)) {
+      toast.error('Please upload an Excel (.xlsx, .xls) or CSV file')
+      return
+    }
+
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const res = await axios.post(`${API}/api/upload/customers`, formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+     toast.success(res.data.message)
+setTimeout(() => window.location.reload(), 1500)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed')
+    } finally {
+      setUploading(false)
+      fileInputRef.current.value = ''
+    }
+  }
+
   const stats = [
-    { val: customers.length || '1,284', lbl: 'Total Customers', bg: '#f0f4ff', color: '#0f3460' },
+    { val: customers.length || '0', lbl: 'Total Customers', bg: '#f0f4ff', color: '#0f3460' },
     { val: '342', lbl: 'Open Requests', bg: '#fff8e6', color: '#856404' },
     { val: '891', lbl: 'All-time Paid', bg: '#f0fff6', color: '#0a3622' },
     { val: '51', lbl: 'Never Paid', bg: '#fdecea', color: '#842029' },
   ]
 
-  // Sample data for display when no real data yet
-  const sampleCustomers = [
-    { _id: '1', name: 'Priya Sharma', mobile: '98765 43210', email: 'priya@email.com', tag: 'VIP', tagBg: '#f0f4ff', tagColor: '#0f3460', requests: 8, total_paid: '1,84,500', outstanding: '25,000', outColor: '#856404', last_activity: '23 Feb 2026' },
-    { _id: '2', name: 'Rajan Mehta', mobile: '91234 56789', email: 'rajan@email.com', tag: 'Wholesale', tagBg: '#f0fff6', tagColor: '#0a3622', requests: 3, total_paid: '62,000', outstanding: '50,000', outColor: '#e94560', last_activity: '18 Feb 2026' },
-    { _id: '3', name: 'Anita Desai', mobile: '99887 76655', email: 'anita@email.com', tag: 'Retail', tagBg: '#fff8e6', tagColor: '#856404', requests: 12, total_paid: '3,20,750', outstanding: '0', outColor: '#888', last_activity: '21 Feb 2026' },
-    { _id: '4', name: 'Suresh Iyer', mobile: '77665 54433', email: 'suresh@email.com', tag: 'VIP', tagBg: '#f0f4ff', tagColor: '#0f3460', requests: 5, total_paid: '98,000', outstanding: '8,000', outColor: '#856404', last_activity: '12 Feb 2026' },
-  ]
-
-  const displayList = customers.length > 0 ? customers : sampleCustomers
+  const displayList = customers
 
   return (
     <Layout>
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleBulkUpload}
+        accept=".xlsx,.xls,.csv"
+        style={{ display: 'none' }}
+      />
+
       <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
 
         {/* Page header */}
@@ -58,8 +96,21 @@ export default function Customers() {
           <div style={{ fontSize: '1.15rem', fontWeight: '700', color: '#1a1a2e' }}>Customers</div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>↓ Export CSV</button>
-            <button style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>↑ Bulk Upload</button>
+            <button
+              onClick={() => fileInputRef.current.click()}
+              disabled={uploading}
+              style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: uploading ? 'not-allowed' : 'pointer', background: uploading ? '#ccc' : '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}
+            >
+              {uploading ? '⏳ Uploading...' : '↑ Bulk Upload'}
+            </button>
             <button onClick={() => navigate('/customers/new')} style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#e94560', color: '#fff', border: 'none' }}>+ Add Customer</button>
+          </div>
+        </div>
+
+        {/* Upload format hint */}
+        <div style={{ padding: '0 24px 10px' }}>
+          <div style={{ background: '#f0f8ff', border: '1px solid #c7d2f0', borderRadius: '8px', padding: '8px 14px', fontSize: '0.75rem', color: '#0f3460' }}>
+            💡 <strong>Bulk Upload format:</strong> Excel columns should be — <strong>Name</strong>, <strong>Email</strong>, <strong>Mobile</strong> (in that order)
           </div>
         </div>
 
@@ -102,11 +153,11 @@ export default function Customers() {
 
       {/* Table */}
       <div style={{ padding: '0 24px 24px', overflowX: 'auto' }}>
-<table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: '900px' }}>
-            <thead>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: '900px' }}>
+          <thead>
             <tr style={{ background: '#f8faff' }}>
-              {['', 'Customer', 'Mobile', 'Email', 'Tags', 'Requests', 'Total Paid (₱)', 'Outstanding (₱)', 'Last Activity', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '10px 14px', textAlign: h === 'Total Paid (₱)' || h === 'Outstanding (₱)' ? 'right' : 'left', borderBottom: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: '700', color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              {['', 'Customer', 'Mobile', 'Email', 'Tags', 'Requests', 'Total Paid', 'Outstanding', 'Last Activity', 'Actions'].map(h => (
+                <th key={h} style={{ padding: '10px 14px', textAlign: h === 'Total Paid' || h === 'Outstanding' ? 'right' : 'left', borderBottom: '1.5px solid #e2e8f0', fontSize: '0.75rem', fontWeight: '700', color: '#0f3460', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                   {h === '' ? <input type="checkbox" /> : h}
                 </th>
               ))}
@@ -115,6 +166,10 @@ export default function Customers() {
           <tbody>
             {loading ? (
               <tr><td colSpan="10" style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>Loading...</td></tr>
+            ) : displayList.length === 0 ? (
+              <tr>
+                <td colSpan="10" style={{ padding: '48px', textAlign: 'center', color: '#9ca3af' }}>No customers found</td>
+              </tr>
             ) : displayList.map((c, i) => (
               <tr key={c._id} style={{ background: i % 2 === 0 ? '#fff' : '#f8faff' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#f0f4ff'}
@@ -123,9 +178,9 @@ export default function Customers() {
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}><input type="checkbox" /></td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>
                   <div style={{ fontWeight: '700', fontSize: '0.82rem' }}>{c.name || c.customer_name}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#aaa' }}>Since {c.since || '12 Jan 2026'}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#aaa' }}>Since {c.since || '—'}</div>
                 </td>
-                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', fontSize: '0.8rem' }}>{c.mobile || c.customer_mobile}</td>
+                <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', fontSize: '0.8rem' }}>{c.mobile || c.customer_mobile || '—'}</td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', fontSize: '0.78rem', color: '#0f3460' }}>{c.email || c.customer_email || '—'}</td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>
                   <span style={{ background: c.tagBg || '#f0f4ff', color: c.tagColor || '#0f3460', fontSize: '0.68rem', fontWeight: '700', padding: '2px 8px', borderRadius: '20px' }}>
@@ -152,7 +207,6 @@ export default function Customers() {
           <div style={{ display: 'flex', gap: '5px' }}>
             <button style={{ padding: '5px 11px', borderRadius: '7px', fontSize: '0.74rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>← Prev</button>
             <button style={{ background: '#0f3460', color: '#fff', border: 'none', borderRadius: '7px', padding: '5px 11px', fontSize: '0.74rem', fontWeight: '700' }}>1</button>
-            <button style={{ padding: '5px 11px', borderRadius: '7px', fontSize: '0.74rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>2</button>
             <button style={{ padding: '5px 11px', borderRadius: '7px', fontSize: '0.74rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>Next →</button>
           </div>
         </div>

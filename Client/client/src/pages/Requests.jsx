@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -25,12 +25,14 @@ const TABS = ['All Requests', 'Pending', 'Partial', 'Paid', 'Failed']
 
 export default function Requests() {
   const navigate = useNavigate()
+  const fileInputRef = useRef(null)
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('All Requests')
   const [search, setSearch] = useState('')
   const [counts, setCounts] = useState({ total: 0, pending: 0, partial: 0, paid: 0, failed: 0, outstanding: 0 })
   const [activePeriod, setActivePeriod] = useState('30 Days')
+  const [uploading, setUploading] = useState(false)
 
   const tabToStatus = { 'All Requests': '', 'Pending': 'pending', 'Partial': 'partial', 'Paid': 'paid', 'Failed': 'expired' }
 const getDateRange = (period) => {
@@ -82,23 +84,65 @@ const getDateRange = (period) => {
     }
   }
 
+  const handleBulkUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setUploading(true)
+    try {
+      const res = await axios.post(`${API}/api/upload/payments`, formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      toast.success(res.data.message || 'Bulk upload successful')
+      setLoading(true)
+      fetchRequests()
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Bulk upload failed')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   const today = new Date()
         const fmt = d => new Date(d).toLocaleDateString('en-PH', { day: 'numeric', month: 'short', year: 'numeric' })
         const { from: fromISO } = getDateRange(activePeriod)
 
   return (
     <Layout>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        onChange={handleBulkUpload}
+        style={{ display: 'none' }}
+      />
       <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0' }}>
         {/* Page header */}
         <div style={{ padding: '18px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: '1.15rem', fontWeight: '700', color: '#1a1a2e' }}>Collect Payments</div>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 15px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>
-              ⬆ Upload Excel
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 15px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: uploading ? 'not-allowed' : 'pointer', background: uploading ? '#dbe3f3' : '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}
+            >
+              {uploading ? '⏳ Uploading...' : '↑ Bulk Upload'}
             </button>
             <button onClick={() => navigate('/requests/new')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 15px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#e94560', color: '#fff', border: 'none' }}>
               + New Request
             </button>
+          </div>
+        </div>
+        <div style={{ padding: '10px 24px 0' }}>
+          <div style={{ background: '#f0f8ff', border: '1px solid #c7d2f0', borderRadius: '8px', padding: '8px 14px', fontSize: '0.75rem', color: '#0f3460' }}>
+            💡 <strong>Bulk Upload format:</strong> columns should be <strong>Customer Name</strong>, <strong>Email</strong>, <strong>Mobile</strong>, <strong>Amount</strong>, <strong>Due Date</strong>, <strong>Description</strong>
           </div>
         </div>
 

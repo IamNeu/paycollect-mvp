@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
@@ -325,9 +325,67 @@ function NewCustomerTab({ navigate }) {
   )
 }
 
-function BulkUploadTab() {
+function BulkUploadTab({ navigate }) {
+  const fileInputRef = useRef(null)
+  const [uploading, setUploading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+
+  const uploadFile = async (file) => {
+    if (!file) return
+
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+    ]
+
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      toast.error('Please upload an Excel (.xlsx, .xls) or CSV file')
+      return
+    }
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setUploading(true)
+    try {
+      const res = await axios.post(`${API}/api/upload/payments`, formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+      toast.success(res.data.message || 'Bulk upload successful')
+      navigate('/requests')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Bulk upload failed')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleFileSelect = (e) => {
+    uploadFile(e.target.files?.[0])
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setDragging(false)
+    if (uploading) return
+    uploadFile(e.dataTransfer.files?.[0])
+  }
+
   return (
     <div style={{ padding: '20px 24px' }}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+
       <div style={{ background: '#f0f4ff', borderRadius: '10px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <div>
           <div style={{ fontWeight: '700', fontSize: '0.88rem', color: '#0f3460' }}>📄 Download Template</div>
@@ -338,11 +396,58 @@ function BulkUploadTab() {
           <button style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>Download .csv</button>
         </div>
       </div>
-      <div style={{ border: '2px dashed #c7d2f0', borderRadius: '11px', padding: '40px', textAlign: 'center', background: '#f8f9ff', cursor: 'pointer' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📂</div>
-        <div style={{ fontWeight: '700', color: '#0f3460', fontSize: '0.9rem', marginBottom: '4px' }}>Drop Excel or CSV file here</div>
-        <div style={{ fontSize: '0.72rem', color: '#aaa', marginBottom: '14px' }}>.xlsx or .csv · Max 5,000 rows · Max 10 MB</div>
-        <button style={{ padding: '8px 18px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#e94560', color: '#fff', border: 'none' }}>Browse Files</button>
+
+      <div style={{ background: '#f0f8ff', border: '1px solid #c7d2f0', borderRadius: '8px', padding: '8px 14px', fontSize: '0.75rem', color: '#0f3460', marginBottom: '12px' }}>
+        💡 <strong>Columns:</strong> Customer Name, Email, Mobile, Amount, Due Date, Description
+      </div>
+
+      <div
+        onClick={() => !uploading && fileInputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault()
+          if (!uploading) setDragging(true)
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault()
+          setDragging(false)
+        }}
+        onDrop={handleDrop}
+        style={{
+          border: `2px dashed ${dragging ? '#e94560' : '#c7d2f0'}`,
+          borderRadius: '11px',
+          padding: '40px',
+          textAlign: 'center',
+          background: dragging ? '#fff5f7' : '#f8f9ff',
+          cursor: uploading ? 'not-allowed' : 'pointer',
+          opacity: uploading ? 0.7 : 1,
+          transition: 'all .2s ease',
+        }}
+      >
+        <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>{uploading ? '⏳' : '📂'}</div>
+        <div style={{ fontWeight: '700', color: '#0f3460', fontSize: '0.9rem', marginBottom: '4px' }}>
+          {uploading ? 'Uploading file...' : 'Drop Excel or CSV file here'}
+        </div>
+        <div style={{ fontSize: '0.72rem', color: '#aaa', marginBottom: '14px' }}>.xlsx, .xls or .csv · Max 5,000 rows · Max 10 MB</div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!uploading) fileInputRef.current?.click()
+          }}
+          disabled={uploading}
+          style={{
+            padding: '8px 18px',
+            borderRadius: '7px',
+            fontSize: '0.8rem',
+            fontWeight: '600',
+            cursor: uploading ? 'not-allowed' : 'pointer',
+            background: uploading ? '#ccc' : '#e94560',
+            color: '#fff',
+            border: 'none',
+          }}
+        >
+          {uploading ? 'Uploading...' : 'Browse Files'}
+        </button>
       </div>
     </div>
   )
@@ -438,7 +543,7 @@ export default function NewRequest() {
         {activeTab === 'existing' && <ExistingCustomerTab navigate={navigate} />}
         {activeTab === 'new' && <NewCustomerTab navigate={navigate} />}
         
-      {activeTab === 'bulk' && <BulkUploadTab />}
+      {activeTab === 'bulk' && <BulkUploadTab navigate={navigate} />}
         {activeTab === 'multi' && <MultiEntryTab />}
       </div>
     </Layout>

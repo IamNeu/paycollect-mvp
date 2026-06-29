@@ -9,11 +9,13 @@ export default function SignIn() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
+      setGoogleLoading(true)
       setLoading(true)
       try {
         const res = await axios.post(`${API}/api/auth/google`, {
@@ -26,10 +28,14 @@ export default function SignIn() {
       } catch (err) {
         toast.error(err.response?.data?.message || 'Google login failed')
       } finally {
+        setGoogleLoading(false)
         setLoading(false)
       }
     },
-    onError: () => toast.error('Google login failed'),
+    onError: () => {
+      setGoogleLoading(false)
+      toast.error('Google login failed')
+    },
   })
 
   const handleSubmit = async (e) => {
@@ -66,6 +72,37 @@ export default function SignIn() {
       padding: '24px',
       fontFamily: "'Segoe UI', system-ui, sans-serif",
     }}>
+      {googleLoading && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(10, 22, 40, 0.88)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            border: '4px solid rgba(233, 69, 96, 0.25)',
+            borderTop: '4px solid #e94560',
+            borderRadius: '50%',
+            animation: 'signInSpin 0.8s linear infinite',
+            marginBottom: '20px',
+          }} />
+          <p style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>
+            Signing you in with Google...
+          </p>
+          <style>{`
+            @keyframes signInSpin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      )}
+
       <div style={{ position: 'fixed', top: '-100px', right: '-100px', width: '400px', height: '400px', borderRadius: '50%', background: 'rgba(233,69,96,0.08)', pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: '-80px', left: '-80px', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(233,69,96,0.05)', pointerEvents: 'none' }} />
 

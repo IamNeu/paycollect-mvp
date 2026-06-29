@@ -49,7 +49,12 @@ const syncPendingPayments = async(merchantId) => {
                     console.log('✅ Synced request ' + request._id + ' to paid')
                 }
             } catch (err) {
-                console.error('Error syncing request ' + request._id + ':', err.message)
+
+                if (err.message.includes('similar object exists in test mode')) {
+                    // Skip silently — old test mode requests
+                } else {
+                    console.error('Error syncing request ' + request._id + ':', err.message)
+                }
             }
         }
 
