@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
@@ -11,11 +11,23 @@ export default function SignIn() {
   const [form, setForm] = useState({ email: '', password: '' })
   const [googleLoading, setGoogleLoading] = useState(false)
 
+  useEffect(() => {
+    const origins = ['https://accounts.google.com', 'https://apis.google.com']
+    const links = origins.map((href) => {
+      const link = document.createElement('link')
+      link.rel = 'preconnect'
+      link.href = href
+      document.head.appendChild(link)
+      return link
+    })
+    return () => links.forEach((link) => link.remove())
+  }, [])
+
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const googleLogin = useGoogleLogin({
+    prompt: 'select_account',
     onSuccess: async (tokenResponse) => {
-      setGoogleLoading(true)
       setLoading(true)
       try {
         const res = await axios.post(`${API}/api/auth/google`, {
@@ -37,6 +49,11 @@ export default function SignIn() {
       toast.error('Google login failed')
     },
   })
+
+  const handleGoogleLogin = () => {
+    setGoogleLoading(true)
+    googleLogin()
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -93,7 +110,7 @@ export default function SignIn() {
             marginBottom: '20px',
           }} />
           <p style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>
-            Signing you in with Google...
+            {loading ? 'Signing you in...' : 'Connecting to Google...'}
           </p>
           <style>{`
             @keyframes signInSpin {
@@ -134,15 +151,15 @@ export default function SignIn() {
         {/* Google */}
         <button
           type="button"
-          onClick={() => googleLogin()}
-          disabled={loading}
+          onClick={handleGoogleLogin}
+          disabled={loading || googleLoading}
           style={{
             width: '100%', padding: '12px', background: '#fff',
             border: '1.5px solid #e2e8f0', borderRadius: '10px',
-            fontSize: '14px', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
+            fontSize: '14px', fontWeight: '600', cursor: (loading || googleLoading) ? 'not-allowed' : 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: '10px', marginBottom: '16px', color: '#333',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)', opacity: loading ? 0.7 : 1,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)', opacity: (loading || googleLoading) ? 0.7 : 1,
           }}
         >
           <svg width="18" height="18" viewBox="0 0 18 18">
@@ -151,7 +168,7 @@ export default function SignIn() {
             <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
             <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
           </svg>
-          {loading ? 'Signing in...' : 'Continue with Google'}
+          {(loading || googleLoading) ? 'Signing in...' : 'Continue with Google'}
         </button>
 
         {/* Apple */}

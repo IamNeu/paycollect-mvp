@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
@@ -9,6 +9,19 @@ export default function SignUp() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  useEffect(() => {
+    const origins = ['https://accounts.google.com', 'https://apis.google.com']
+    const links = origins.map((href) => {
+      const link = document.createElement('link')
+      link.rel = 'preconnect'
+      link.href = href
+      document.head.appendChild(link)
+      return link
+    })
+    return () => links.forEach((link) => link.remove())
+  }, [])
   const [form, setForm] = useState({
     company_name: '',
     email: '',
@@ -36,6 +49,7 @@ export default function SignUp() {
   }
 
   const googleLogin = useGoogleLogin({
+    prompt: 'select_account',
     onSuccess: async (tokenResponse) => {
       setLoading(true)
       try {
@@ -50,10 +64,19 @@ export default function SignUp() {
         toast.error(err.response?.data?.message || 'Google login failed')
       } finally {
         setLoading(false)
+        setGoogleLoading(false)
       }
     },
-    onError: () => toast.error('Google login failed')
+    onError: () => {
+      setGoogleLoading(false)
+      toast.error('Google login failed')
+    },
   })
+
+  const handleGoogleLogin = () => {
+    setGoogleLoading(true)
+    googleLogin()
+  }
 
   const handleStep1 = (e) => {
     e.preventDefault()
@@ -124,7 +147,7 @@ export default function SignUp() {
       <div style={{ position: 'fixed', bottom: '-80px', left: '-80px', width: '300px', height: '300px', borderRadius: '50%', background: 'rgba(233,69,96,0.05)', pointerEvents: 'none' }} />
 
       {/* Loading overlay */}
-      {loading && (
+      {(loading || googleLoading) && (
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -145,7 +168,7 @@ export default function SignUp() {
             marginBottom: '20px',
           }} />
           <p style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>
-            Setting up your account...
+            {googleLoading && !loading ? 'Connecting to Google...' : 'Setting up your account...'}
           </p>
           <style>{`
             @keyframes signupSpin {
@@ -261,15 +284,15 @@ export default function SignUp() {
               {/* Google Login Button */}
               <button
                 type="button"
-                onClick={() => googleLogin()}
-                disabled={loading}
+                onClick={handleGoogleLogin}
+                disabled={loading || googleLoading}
                 style={{
                   width: '100%', padding: '12px', background: '#fff',
                   border: '1.5px solid #e2e8f0', borderRadius: '10px',
-                  fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                  fontSize: '14px', fontWeight: '600', cursor: (loading || googleLoading) ? 'not-allowed' : 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   gap: '10px', marginBottom: '16px', color: '#333',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.08)', opacity: (loading || googleLoading) ? 0.7 : 1,
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 18 18">
@@ -278,7 +301,7 @@ export default function SignUp() {
                   <path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/>
                   <path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/>
                 </svg>
-                {loading ? 'Signing in...' : 'Continue with Google'}
+                {(loading || googleLoading) ? 'Signing in...' : 'Continue with Google'}
               </button>
 
               {/* Apple Login Button */}

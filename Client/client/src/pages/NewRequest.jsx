@@ -2,8 +2,30 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import * as XLSX from 'xlsx'
 import Layout from '../components/Layout'
 import API from '../apiConfig'
+
+const TEMPLATE_HEADERS = ['Customer Name', 'Email', 'Mobile', 'Amount', 'Due Date', 'Description']
+const TEMPLATE_SAMPLE = ['John Smith', 'john@example.com', '+1234567890', 100, '2026-07-30', 'Invoice #001']
+
+const downloadCsvTemplate = () => {
+  const csv = `${TEMPLATE_HEADERS.join(',')}\n${TEMPLATE_SAMPLE.join(',')}`
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'paycollect-template.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const downloadXlsxTemplate = () => {
+  const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, TEMPLATE_SAMPLE])
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Payments')
+  XLSX.writeFile(wb, 'paycollect-template.xlsx')
+}
 
 const TABS = [
   { id: 'existing', label: '🔍 Existing Customer' },
@@ -392,8 +414,8 @@ function BulkUploadTab({ navigate }) {
           <div style={{ fontSize: '0.78rem', color: '#666', marginTop: '2px' }}>Use our pre-formatted Excel or CSV template to ensure correct column mapping.</div>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>Download .xlsx</button>
-          <button style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>Download .csv</button>
+          <button type="button" onClick={downloadXlsxTemplate} style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>Download .xlsx</button>
+          <button type="button" onClick={downloadCsvTemplate} style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>Download .csv</button>
         </div>
       </div>
 
