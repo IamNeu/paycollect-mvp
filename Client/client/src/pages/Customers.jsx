@@ -69,6 +69,17 @@ setTimeout(() => window.location.reload(), 1500)
     }
   }
 
+  const downloadCustomerTemplate = () => {
+    const csv = 'Name,Email,Mobile\nJohn Smith,john@example.com,+1234567890'
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'paycollect-customers-template.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const stats = [
     { val: customers.length || '0', lbl: 'Total Customers', bg: '#f0f4ff', color: '#0f3460' },
     { val: '342', lbl: 'Open Requests', bg: '#fff8e6', color: '#856404' },
@@ -96,6 +107,13 @@ setTimeout(() => window.location.reload(), 1500)
           <div style={{ fontSize: '1.15rem', fontWeight: '700', color: '#1a1a2e' }}>Customers</div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}>↓ Export CSV</button>
+            <button
+              type="button"
+              onClick={downloadCustomerTemplate}
+              style={{ padding: '7px 14px', borderRadius: '7px', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0' }}
+            >
+              ↓ Template
+            </button>
             <button
               onClick={() => fileInputRef.current.click()}
               disabled={uploading}
