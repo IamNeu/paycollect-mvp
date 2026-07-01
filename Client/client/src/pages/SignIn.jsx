@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import axios from 'axios'
@@ -10,6 +10,26 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
   const [googleLoading, setGoogleLoading] = useState(false)
+  const googleTimeoutRef = useRef(null)
+  const googleTimedOutRef = useRef(false)
+
+  const clearGoogleTimeout = () => {
+    if (googleTimeoutRef.current) {
+      clearTimeout(googleTimeoutRef.current)
+      googleTimeoutRef.current = null
+    }
+  }
+
+  const startGoogleTimeout = () => {
+    clearGoogleTimeout()
+    googleTimeoutRef.current = setTimeout(() => {
+      googleTimeoutRef.current = null
+      googleTimedOutRef.current = true
+      setGoogleLoading(false)
+      setLoading(false)
+      toast.error('Google sign in timed out. Please try again or use a different browser.')
+    }, 15000)
+  }
 
   useEffect(() => {
     const origins = ['https://accounts.google.com', 'https://apis.google.com']
@@ -20,7 +40,10 @@ export default function SignIn() {
       document.head.appendChild(link)
       return link
     })
-    return () => links.forEach((link) => link.remove())
+    return () => {
+      links.forEach((link) => link.remove())
+      clearGoogleTimeout()
+    }
   }, [])
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
@@ -28,30 +51,44 @@ export default function SignIn() {
   const googleLogin = useGoogleLogin({
     prompt: 'select_account',
     onSuccess: async (tokenResponse) => {
+      clearGoogleTimeout()
+      if (googleTimedOutRef.current) return
+
       setLoading(true)
       try {
         const res = await axios.post(`${API}/api/auth/google`, {
           access_token: tokenResponse.access_token,
         })
+        if (googleTimedOutRef.current) return
+
         localStorage.setItem('token', res.data.token)
         localStorage.setItem('merchant', JSON.stringify(res.data.merchant))
         toast.success('Welcome back! 👋')
         navigate('/dashboard')
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Google login failed')
+        if (!googleTimedOutRef.current) {
+          toast.error(err.response?.data?.message || 'Google login failed')
+        }
       } finally {
-        setGoogleLoading(false)
-        setLoading(false)
+        if (!googleTimedOutRef.current) {
+          setGoogleLoading(false)
+          setLoading(false)
+        }
       }
     },
     onError: () => {
+      clearGoogleTimeout()
+      if (googleTimedOutRef.current) return
+
       setGoogleLoading(false)
       toast.error('Google login failed')
     },
   })
 
   const handleGoogleLogin = () => {
+    googleTimedOutRef.current = false
     setGoogleLoading(true)
+    startGoogleTimeout()
     googleLogin()
   }
 
