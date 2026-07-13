@@ -36,13 +36,14 @@ router.post('/customers', protect, upload.single('file'), async(req, res) => {
                 if (!name) { skipped++; continue }
 
                 // Check if customer already exists
-                const existing = await Customer.findOne({
-                    merchant_id: req.merchant._id,
-                    $or: [
-                        email ? { email } : null,
-                        mobile ? { mobile } : null
-                    ].filter(Boolean)
-                })
+                // Only skip if mobile number already exists (mobile is the unique identifier)
+                if (mobile) {
+                    const existing = await Customer.findOne({
+                        merchant_id: req.merchant._id,
+                        mobile: mobile
+                    })
+                    if (existing) { skipped++; continue }
+                }
 
                 if (existing) { skipped++; continue }
 
