@@ -12,11 +12,24 @@ export default function Customers() {
   const [search, setSearch] = useState('')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
+  const [customerInsights, setCustomerInsights] = useState({})
 
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (!token) { navigate('/login'); return }
     fetchCustomers()
+
+    // Load AI customer insights
+axios.get(`${API}/api/ai/customer-insights`, {
+  headers: { Authorization: `Bearer ${token}` }
+}).then(res => {
+  const insightMap = {}
+  res.data.insights.forEach(insight => {
+    if (insight.mobile) insightMap[insight.mobile] = insight
+    if (insight.email) insightMap[insight.email] = insight
+  })
+  setCustomerInsights(insightMap)
+}).catch(err => console.log('Customer insights error:', err.message))
   }, [])
 
   const fetchCustomers = async () => {
@@ -195,8 +208,14 @@ setTimeout(() => window.location.reload(), 1500)
               >
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}><input type="checkbox" /></td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7' }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.82rem' }}>{c.name || c.customer_name}</div>
-                  <div style={{ fontSize: '0.7rem', color: '#aaa' }}>Since {c.since || '—'}</div>
+<div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+  <div style={{ fontWeight: '700', fontSize: '0.82rem' }}>{c.name || c.customer_name}</div>
+  {customerInsights[c.mobile || c.customer_mobile] && (
+    <span title={customerInsights[c.mobile || c.customer_mobile].insight} style={{ fontSize: '14px', cursor: 'help' }}>
+      {customerInsights[c.mobile || c.customer_mobile].badge}
+    </span>
+  )}
+</div>                  <div style={{ fontSize: '0.7rem', color: '#aaa' }}>Since {c.since || '—'}</div>
                 </td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', fontSize: '0.8rem' }}>{c.mobile || c.customer_mobile || '—'}</td>
                 <td style={{ padding: '11px 14px', borderBottom: '1px solid #f0f2f7', fontSize: '0.78rem', color: '#0f3460' }}>{c.email || c.customer_email || '—'}</td>
