@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const merchant = JSON.parse(localStorage.getItem('merchant') || '{}')
   const firstName = merchant.company_name?.split(' ')[0] || 'there'
+  const [agingData, setAgingData] = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -32,6 +33,13 @@ export default function Dashboard() {
     }).then(res => setStats(res.data)).catch(err => {
       console.log('Dashboard stats error:', err.response?.status)
     })
+
+  // Load AI aging report
+axios.get(`${API}/api/ai/aging-report`, {
+  headers: { Authorization: `Bearer ${token}` }
+}).then(res => setAgingData(res.data)).catch(err => {
+  console.log('Aging report error:', err.message)
+})
   }, [])
 
   const kpis = stats || {
@@ -271,9 +279,65 @@ export default function Dashboard() {
                 </div>
               ))}
 <span onClick={() => navigate('/customers')} style={{ display: 'block', textAlign: 'center', fontSize: '0.7rem', color: '#e94560', fontWeight: '600', paddingTop: '4px', cursor: 'pointer' }}>View all 38 →</span>            </div>
-
           </div>
         </div>
+
+        {/* AI Payment Aging Analysis Widget */}
+        {agingData && (
+          <div style={{ padding: '0 16px 16px' }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '14px',
+              padding: '20px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              border: '1px solid #f0f2f7'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>🤖</span>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#0f3460' }}>AI Payment Aging Analysis</div>
+                    <div style={{ fontSize: '0.7rem', color: '#888' }}>Powered by PayCollect AI</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/reports')}
+                  style={{ padding: '5px 12px', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0', borderRadius: '8px', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }}
+                >
+                  Full Report →
+                </button>
+              </div>
+
+              {/* Action Summary */}
+              <div style={{
+                background: agingData.buckets.days_61_90.total + agingData.buckets.days_90_plus.total > 0 ? '#fef2f2' : '#f0fdf4',
+                border: `1px solid ${agingData.buckets.days_61_90.total + agingData.buckets.days_90_plus.total > 0 ? '#fecaca' : '#bbf7d0'}`,
+                borderRadius: '8px', padding: '10px 14px', marginBottom: '14px',
+                fontSize: '0.78rem', color: '#333', lineHeight: 1.6
+              }}>
+                {agingData.actionSummary}
+              </div>
+
+              {/* Buckets */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                {[
+                  { label: '1–30 days', bucket: agingData.buckets.days_1_30, bg: '#fef9c3', border: '#f59e0b', color: '#92400e', icon: '🟡' },
+                  { label: '31–60 days', bucket: agingData.buckets.days_31_60, bg: '#ffedd5', border: '#f97316', color: '#9a3412', icon: '🟠' },
+                  { label: '61–90 days', bucket: agingData.buckets.days_61_90, bg: '#fee2e2', border: '#ef4444', color: '#991b1b', icon: '🔴' },
+                  { label: '90+ days', bucket: agingData.buckets.days_90_plus, bg: '#f3e8ff', border: '#7c3aed', color: '#4c1d95', icon: '⚫' },
+                ].map((b, i) => (
+                  <div key={i} style={{ background: b.bg, border: `1.5px solid ${b.border}`, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '16px', marginBottom: '4px' }}>{b.icon}</div>
+                    <div style={{ fontSize: '0.65rem', fontWeight: '700', color: b.color, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>{b.label}</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: b.color }}>${b.bucket.total.toFixed(0)}</div>
+                    <div style={{ fontSize: '0.65rem', color: b.color, opacity: 0.8 }}>{b.bucket.requests.length} req</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </Layout>
   )
