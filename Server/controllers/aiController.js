@@ -1,5 +1,10 @@
 const PaymentRequest = require('../models/PaymentRequest')
 const Customer = require('../models/Customer')
+const AIInsight = require('../models/AIInsight')
+const { generateDashboardInsights } = require('../services/anthropicService')
+
+const CACHE_HOURS = 24
+const REGEN_COOLDOWN_MINUTES = 60
 
 // FEATURE 1 — Payment Aging Analysis
 const getAgingReport = async(req, res) => {
@@ -185,20 +190,120 @@ const getCustomerInsights = async(req, res) => {
     }
 }
 
-// FEATURE 3 — Dashboard Insights (placeholder for now)
+// Builds a compact data summary to hand to Claude — reuses the same
+// aggregation logic as getAgingReport / getCustomerInsights but condensed.
+async function buildMerchantSummary(merchantId) {
+    const today = new Date()
+    const requests = await PaymentRequest.find({ merchant_id: merchantId })
+
+    const buckets = { current: 0, days_1_30: 0, days_31_60: 0, days_61_90: 0, days_90_plus: 0 }
+    let totalOutstanding = 0
+    let overdueCount = 0
+
+    const customerMap = {}
+
+    for (const r of requests) {
+        const key = r.customer_mobile || r.customer_email || r.customer_name
+        if (!customerMap[key]) {
+            customerMap[key] = { name: r.customer_name, total: 0, paid: 0, late: 0, totalAmount: 0 }
+        }
+        customerMap[key].total++
+            customerMap[key].totalAmount += r.amount_due
+
+        if (r.status === 'paid') {
+            customerMap[key].paid++
+                if (new Date(r.paid_at) > new Date(r.due_date)) customerMap[key].late++
+                    continue
+        }
+
+        if (r.status === 'pending' || r.status === 'partial') {
+            const remaining = r.amount_due - (r.amount_paid || 0)
+            totalOutstanding += remaining
+            const daysOverdue = Math.floor((today - new Date(r.due_date)) / (1000 * 60 * 60 * 24))
+
+            if (daysOverdue <= 0) buckets.current += remaining
+            else if (daysOverdue <= 30) buckets.days_1_30 += remaining
+            else if (daysOverdue <= 60) buckets.days_31_60 += remaining
+            else if (daysOverdue <= 90) buckets.days_61_90 += remaining
+            else buckets.days_90_plus += remaining
+
+            if (daysOverdue > 0) overdueCount++
+        }
+    }
+
+    const atRiskCustomers = Object.values(customerMap)
+        .filter(c => c.total >= 3 && c.paid / c.total < 0.6)
+        .map(c => ({ name: c.name, totalOwed: c.totalAmount, payRate: Math.round((c.paid / c.total) * 100) }))
+        .sort((a, b) => b.totalOwed - a.totalOwed)
+        .slice(0, 5)
+
+    return {
+        totalOutstanding: Number(totalOutstanding.toFixed(2)),
+        overdueRequestCount: overdueCount,
+        agingBuckets: buckets,
+        totalCustomers: Object.keys(customerMap).length,
+        atRiskCustomers
+    }
+}
+
+// Shared by the controller (on-demand/cache-miss) and the nightly cron.
+async function generateInsightsForMerchant(merchantId, source = 'cron') {
+    const summary = await buildMerchantSummary(merchantId)
+    const insights = await generateDashboardInsights(summary)
+
+    const doc = await AIInsight.findOneAndUpdate({ merchant_id: merchantId }, { insights, generated_at: new Date(), source }, { upsert: true, new: true })
+    return doc
+}
+
+// FEATURE 3 — Dashboard Insights (cached, Claude-powered)
 const getDashboardInsights = async(req, res) => {
     try {
-        res.json({
-            insights: [{
-                type: 'info',
-                icon: '📊',
-                text: 'AI insights coming soon — aging analysis and customer intelligence are live now.',
-                action: null
-            }]
-        })
+        const merchantId = req.merchant._id
+        const cached = await AIInsight.findOne({ merchant_id: merchantId })
+
+        const isStale = !cached || (Date.now() - new Date(cached.generated_at).getTime()) > CACHE_HOURS * 60 * 60 * 1000
+
+        if (!isStale) {
+            return res.json({ insights: cached.insights, generated_at: cached.generated_at, cached: true })
+        }
+
+        // Cache miss or stale — generate fresh
+        const doc = await generateInsightsForMerchant(merchantId, cached ? 'cron' : 'manual')
+        res.json({ insights: doc.insights, generated_at: doc.generated_at, cached: false })
+
     } catch (err) {
+        console.error('Dashboard insights error:', err.message)
+            // Fall back to cached data if generation fails, so the widget doesn't break
+        const cached = await AIInsight.findOne({ merchant_id: req.merchant._id }).catch(() => null)
+        if (cached) return res.json({ insights: cached.insights, generated_at: cached.generated_at, cached: true, stale: true })
         res.status(500).json({ message: 'Failed to generate insights' })
     }
 }
 
-module.exports = { getAgingReport, getCustomerInsights, getDashboardInsights }
+// Manual "Regenerate" button — rate limited to avoid spamming the API
+const regenerateDashboardInsights = async(req, res) => {
+    try {
+        const merchantId = req.merchant._id
+        const existing = await AIInsight.findOne({ merchant_id: merchantId })
+
+        if (existing) {
+            const minutesSinceLast = (Date.now() - new Date(existing.generated_at).getTime()) / 60000
+            if (minutesSinceLast < REGEN_COOLDOWN_MINUTES) {
+                return res.status(429).json({
+                    message: `Please wait ${Math.ceil(REGEN_COOLDOWN_MINUTES - minutesSinceLast)} more minute(s) before regenerating.`,
+                    insights: existing.insights,
+                    generated_at: existing.generated_at
+                })
+            }
+        }
+
+        const doc = await generateInsightsForMerchant(merchantId, 'manual')
+        res.json({ insights: doc.insights, generated_at: doc.generated_at, cached: false })
+
+    } catch (err) {
+        console.error('Regenerate insights error:', err.message)
+        res.status(500).json({ message: 'Failed to regenerate insights' })
+    }
+}
+
+module.exports = { getAgingReport, getCustomerInsights, getDashboardInsights, regenerateDashboardInsights, generateInsightsForMerchant }

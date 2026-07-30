@@ -35,8 +35,7 @@ router.post('/customers', protect, upload.single('file'), async(req, res) => {
 
                 if (!name) { skipped++; continue }
 
-                // Check if customer already exists
-                // Only skip if mobile number already exists (mobile is the unique identifier)
+                // Check if customer already exists (mobile is the unique identifier)
                 if (mobile) {
                     const existing = await Customer.findOne({
                         merchant_id: req.merchant._id,
@@ -44,8 +43,6 @@ router.post('/customers', protect, upload.single('file'), async(req, res) => {
                     })
                     if (existing) { skipped++; continue }
                 }
-
-                if (existing) { skipped++; continue }
 
                 await Customer.create({
                     merchant_id: req.merchant._id,
@@ -84,7 +81,9 @@ router.post('/payments', protect, upload.single('file'), async(req, res) => {
 
         let created = 0
         let failed = 0
+        let duplicates = 0
         const errors = []
+        const seenRows = new Set() // tracks exact-duplicate rows within THIS upload only
 
         for (const row of rows) {
             try {
@@ -96,6 +95,21 @@ router.post('/payments', protect, upload.single('file'), async(req, res) => {
                 const description = row['Description'] || row['description'] || row['Note'] || ''
 
                 if (!customer_name || !amount_due) { failed++; continue }
+
+                // Build a normalized key to catch exact duplicate rows in the same file
+                const dedupeKey = [
+                    customer_name.trim().toLowerCase(),
+                    (customer_email || '').trim().toLowerCase(),
+                    (customer_mobile || '').trim(),
+                    amount_due,
+                    due_date ? new Date(due_date).toDateString() : 'no-date'
+                ].join('|')
+
+                if (seenRows.has(dedupeKey)) {
+                    duplicates++
+                    continue
+                }
+                seenRows.add(dedupeKey)
 
                 const token = Math.random().toString(36).substring(2, 15)
                 let stripeUrl = null
@@ -167,8 +181,9 @@ router.post('/payments', protect, upload.single('file'), async(req, res) => {
         }
 
         res.json({
-            message: `Upload complete! Created ${created} payment requests, ${failed} failed.`,
+            message: `Upload complete! Created ${created} payment requests, skipped ${duplicates} duplicate rows, ${failed} failed.`,
             created,
+            duplicates,
             failed,
             errors
         })

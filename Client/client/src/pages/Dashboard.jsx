@@ -13,6 +13,9 @@ export default function Dashboard() {
   const merchant = JSON.parse(localStorage.getItem('merchant') || '{}')
   const firstName = merchant.company_name?.split(' ')[0] || 'there'
   const [agingData, setAgingData] = useState(null)
+  const [dashboardInsights, setDashboardInsights] = useState(null)
+const [insightsLoading, setInsightsLoading] = useState(false)
+const [insightsError, setInsightsError] = useState(null)
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -40,6 +43,13 @@ axios.get(`${API}/api/ai/aging-report`, {
 }).then(res => setAgingData(res.data)).catch(err => {
   console.log('Aging report error:', err.message)
 })
+
+// Load AI dashboard insights
+    axios.get(`${API}/api/ai/dashboard-insights`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => setDashboardInsights(res.data)).catch(err => {
+      console.log('Dashboard insights error:', err.message)
+    })
   }, [])
 
   const kpis = stats || {
@@ -58,6 +68,18 @@ axios.get(`${API}/api/ai/aging-report`, {
     { label: 'Avg Days to Pay', value: `${kpis.avg_days_to_pay || 0} days`, sub: '↓ 0.8d faster', subColor: '#22c55e', borderColor: '#f59e0b' },
     { label: 'Active Customers', value: Number(kpis.active_customers || 0).toLocaleString(), sub: '+38 this month', subColor: '#22c55e', borderColor: '#8b5cf6' },
   ]
+  const handleRegenerateInsights = () => {
+    const token = localStorage.getItem('token')
+    setInsightsLoading(true)
+    setInsightsError(null)
+    axios.post(`${API}/api/ai/dashboard-insights/regenerate`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      setDashboardInsights(res.data)
+    }).catch(err => {
+      setInsightsError(err.response?.data?.message || 'Failed to regenerate insights')
+    }).finally(() => setInsightsLoading(false))
+  }
 
   const channelData = [
     { channel: 'GCash', pct: 42, color: '#00b14f' },
@@ -300,6 +322,83 @@ axios.get(`${API}/api/ai/aging-report`, {
                     <div style={{ fontSize: '0.7rem', color: '#888' }}>Powered by PayCollect AI</div>
                   </div>
                 </div>
+                {/* AI Dashboard Insights Widget */}
+        {dashboardInsights && (
+          <div style={{ padding: '0 16px 16px' }}>
+            <div style={{
+              background: '#fff',
+              borderRadius: '14px',
+              padding: '20px',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              border: '1px solid #f0f2f7'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>✨</span>
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#0f3460' }}>AI Insights</div>
+                    <div style={{ fontSize: '0.7rem', color: '#888' }}>
+                      {dashboardInsights.generated_at
+                        ? `Updated ${new Date(dashboardInsights.generated_at).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+                        : 'Powered by PayCollect AI'}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleRegenerateInsights}
+                  disabled={insightsLoading}
+                  style={{
+                    padding: '5px 12px',
+                    background: insightsLoading ? '#f0f2f7' : '#f0f4ff',
+                    color: '#0f3460', border: '1px solid #c7d2f0',
+                    borderRadius: '8px', fontSize: '0.72rem', fontWeight: '600',
+                    cursor: insightsLoading ? 'default' : 'pointer'
+                  }}
+                >
+                  {insightsLoading ? 'Generating…' : '↻ Regenerate'}
+                </button>
+              </div>
+
+              {insightsError && (
+                <div style={{ fontSize: '0.72rem', color: '#991b1b', marginBottom: '10px' }}>{insightsError}</div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {dashboardInsights.insights?.map((insight, i) => {
+                  const styles = {
+                    warning: { bg: '#fef2f2', border: '#fecaca' },
+                    info: { bg: '#f0f4ff', border: '#c7d2f0' },
+                    success: { bg: '#f0fdf4', border: '#bbf7d0' },
+                    opportunity: { bg: '#faf5ff', border: '#e9d5ff' },
+                  }[insight.type] || { bg: '#f9fafb', border: '#e5e7eb' }
+
+                  return (
+                    <div key={i} style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      background: styles.bg, border: `1px solid ${styles.border}`,
+                      borderRadius: '8px', padding: '10px 14px'
+                    }}>
+                      <span style={{ fontSize: '15px', flexShrink: 0 }}>{insight.icon}</span>
+                      <div style={{ flex: 1, fontSize: '0.78rem', color: '#333', lineHeight: 1.5 }}>{insight.text}</div>
+                      {insight.action && (
+                        <button
+                          onClick={() => navigate(insight.action.route)}
+                          style={{
+                            flexShrink: 0, padding: '4px 10px', background: '#0f3460',
+                            color: '#fff', border: 'none', borderRadius: '6px',
+                            fontSize: '0.68rem', fontWeight: '600', cursor: 'pointer'
+                          }}
+                        >
+                          {insight.action.label}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
                 <button
                   onClick={() => navigate('/reports')}
                   style={{ padding: '5px 12px', background: '#f0f4ff', color: '#0f3460', border: '1px solid #c7d2f0', borderRadius: '8px', fontSize: '0.72rem', fontWeight: '600', cursor: 'pointer' }}

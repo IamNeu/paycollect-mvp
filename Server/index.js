@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+const startDashboardInsightsCron = require('./cron/dashboardInsightsCron')
 const app = express();
 
 // Middleware: CORS Configuration (Only once)
@@ -68,7 +68,8 @@ const PORT = process.env.PORT || 10000;
 // Connect to MongoDB then start server (The ONLY listen block you need)
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI).then(() => {
         console.log('✅ Connected to MongoDB!');
-        // This is the only place we should start the server
+        startDashboardInsightsCron()
+            // This is the only place we should start the server
         app.listen(PORT, "0.0.0.0", () => {
             console.log(`✅ Server running on port ${PORT}`);
         });
