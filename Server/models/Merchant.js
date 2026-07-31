@@ -59,7 +59,9 @@ const merchantSchema = new mongoose.Schema({
         api_key: { type: String },
         secret_key: { type: String },
         connected: { type: Boolean, default: false }
-    }]
+    }],
+    appsumo_license_key: { type: String, default: null, index: true },
+    appsumo_tier: { type: Number, default: null },
 }, { timestamps: true })
 
 // Automatically hash password before saving

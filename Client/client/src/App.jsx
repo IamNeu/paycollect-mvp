@@ -21,6 +21,7 @@ import Support from './pages/Support.jsx'
 import ConnectPG from './pages/ConnectPG.jsx'
 import SetupComplete from './pages/SetupComplete.jsx'
 import LandingPageUS from './pages/LandingPageUS.jsx'
+import AppSumoActivate from './pages/AppSumoActivate.jsx'
 
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
 <Route path="/" element={<LandingPageUS />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signin" element={<SignIn />} />
+        <Route path="/appsumo/activate" element={<AppSumoActivate />} />
         <Route path="/pay/:token" element={<PaymentPage />} />
         <Route path="/pay/success" element={<PaymentSuccess />} />
 
